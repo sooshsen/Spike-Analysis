@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+# sampling rate : 30kHz
 
 def get_inputs():
     # OPEN TXT FILE FOR PATH and save as numpy array
