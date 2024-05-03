@@ -61,20 +61,6 @@ def artifact_detection(channel, ref_mean):
 
 
 
-def onset_detection(chan_array, lowlim, uplim):
-    chan_df = pd.DataFrame(chan_array)
-    
-    p_spike_locs = list(np.where(chan_df>uplim)[0])
-    n_spike_locs = list(np.where(chan_df<lowlim)[0])
-    
-    all_spikes_onsets_locs = np.concatenate((p_spike_locs, n_spike_locs))
-    
-    all_spikes_onsets_locs = np.sort(all_spikes_onsets_locs)
-    
-    return all_spikes_onsets_locs   
-
-
-
 def name_folder(path):
     # create results folder based on original data file location
     a = str(path)
