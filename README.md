@@ -5,7 +5,7 @@ Required external program installations: Spike Interface
 
 Scripts in order:
 1. Generate metadata per experiment (mean, variance, #ofdatasamples) - getStats.py
-2. Combine metadata from multiple experiments
+2. Combine metadata from multiple experiments - combineStats.py
 3. Spike onset detection per experiment - detectOnsets.py
 
 Additional helper scripts:
