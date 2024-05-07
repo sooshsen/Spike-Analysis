@@ -29,14 +29,26 @@ def artifact_removal(channel, locs):
     channel = channel.astype(float)     # np.nan is a float, so conversion of channel to float is necessary before boolean masking
     print('# of artifact locations:', len(locs))
     
+    # no artifacts, then return channel
+    if len(locs)==0:
+        return channel
+    
     for i in range(0,len(locs)):
         
         if i == len(locs)-1:
-            ind = np.arange(locs[i]-75000, locs[i], dtype=int)
+            startind = locs[i]-75000
+            if startind < 0:
+                startind = 0
+            endind = locs[i]
+            ind = np.arange(startind, endind, dtype=int)
             channel[ind] = np.nan
             
         else:
-            ind = np.arange(locs[i]-75000, locs[i]+75000, dtype=int)
+            startind = locs[i]-75000
+            if startind < 0:
+                startind = 0
+            endind = locs[i]+75000
+            ind = np.arange(startind, endind, dtype=int)
             channel[ind] = np.nan
           
     return channel
