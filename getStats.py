@@ -80,21 +80,11 @@ def get_artifacts(rec, data_dir):
     home = Path().resolve()     # current directory : directory where this script is saved ('D:/spike_analysis')
     folder = name_folder(data_dir)
 
-    # check whether 'results' directory already exists in current directory
-    if not os.path.exists('./results'):
-        
-        # create folder if does not exist already
-        os.mkdir(Path(os.path.join(home, 'results')))
-        
-        savehere = Path(os.path.join(home, 'results'))
-        os.mkdir(Path(os.path.join(savehere, folder)))
-        save_files_here = Path(os.path.join(savehere, folder))
-    else:
-        
-        # save in the same folder if results folder already exists
-        savehere = Path(os.path.join(home, 'results'))
-        os.mkdir(Path(os.path.join(savehere, folder)))
-        save_files_here = Path(os.path.join(savehere, folder))
+    savehere = Path(os.path.join(home, 'results'))
+    save_files_here = Path(os.path.join(savehere, folder))
+    
+    if not os.path.exists(save_files_here):     # if the required file does not exist, create one
+        os.mkdir(save_files_here)
 
 
     # empty lists for stats of importance
