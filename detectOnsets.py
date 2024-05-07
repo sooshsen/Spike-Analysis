@@ -163,7 +163,7 @@ def main():
     # main function body
     
     paths_array = get_inputs()
-    combinedStats = np.load(Path('D:/Sushimita/python_analysis/combined_limits_for_spikes/tc_music_combined_29_36_stats.npy'))
+    combinedStats = np.load(Path('D:/Sushmita/python_analysis/combined_limits_for_spikes/combined_stats.npy')) # to correct this
     combinedStats = pd.DataFrame(combinedStats)
     
     for i in range(0,paths_array.size):
