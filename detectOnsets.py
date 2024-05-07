@@ -4,7 +4,7 @@
 def get_inputs():
     # OPEN TXT FILE FOR PATH and save as numpy array
     # NOTE: save destinations.txt in folder with scripts
-    paths_file = np.loadtxt("D:\spike_analysis\destinations.txt", skiprows=1, dtype='str')
+    paths_file = np.loadtxt("D:\spike_analysis\destinations.txt", comments='#', dtype='str')
     
     return paths_file
     
