@@ -1,3 +1,0 @@
-# Example file
-D:/sushmitaS16/data/elfie_p2/2/limits/music_stats.npy
-D:/sushmitaS16/data/elfie_p1/22/limits/tuning_stats.npy
