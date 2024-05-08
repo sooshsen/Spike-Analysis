@@ -93,6 +93,9 @@ def get_artifacts(rec, data_dir):
     folder = name_folder(data_dir)
 
     savehere = Path(os.path.join(home, 'results'))
+    if not os.path.exists(savehere):     # if the required file does not exist, create one
+        os.mkdir(savehere)
+
     save_files_here = Path(os.path.join(savehere, folder))
     
     if not os.path.exists(save_files_here):     # if the required file does not exist, create one
