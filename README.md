@@ -1,6 +1,6 @@
 # spike-analysis
 
-This folder contains scripts necessary for running downstream analysis on open-ephys data
+Contains scripts necessary for running downstream analysis on open-ephys data
 Required external program installations: Spike Interface
 
 Scripts in order:
