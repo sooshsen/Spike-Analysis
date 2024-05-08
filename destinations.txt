@@ -1,4 +1,0 @@
-# Example destinations.txt storing paths to open-ephys output - user input
-D:/sushmitaS16/data/elfie_p2/2/2023-07-20_23-38-09
-D:/sushmitaS16/data/elfie_p1/22/2023-07-21_21-42-51
-D:/sushmitaS16/data/elfie_p1/4/2023-07-20_21-42-51
