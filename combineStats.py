@@ -55,9 +55,9 @@ def combine_stats(all_mean, all_var, sampls, N):
        
         
         
-    savehere = Path('D:/Sushimita/python_analysis/combined_limits_for_spikes')
+    savehere = Path('D:/sushmitaS16/python_analysis/combined_limits_for_spikes')
     stats = pd.DataFrame({'mean': combined_mean, 'standard_dev': combined_std})   
-    np.save(os.path.join(savehere, 'tc_music_combined_29_36_stats'), stats)   # .npy file saved with the limits for the tuning curve data
+    np.save(os.path.join(savehere, 'combined_stats'), stats)   # .npy file saved with the limits for the tuning curve data
 
     return stats
     
