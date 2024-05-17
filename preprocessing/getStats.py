@@ -80,14 +80,15 @@ def name_folder(path):
     # create results folder based on original data file
     folder = str(path)
     while "\\" in folder:
-      folder = folder.replace('\\', '_')
+      folder = folder.replace('\\', '.')
       if ':' in folder:
           folder = folder.replace(':', '')
           
     folder = folder.lower()
-    folder_name_loc = re.search(r"_p\w.[0-9]", folder)
+    folder_name_loc = re.search(r".p[0-9].\w+.", folder)
     ind = folder_name_loc.span()
-    folder = folder[ind[0]+1:ind[1]]
+    folder = folder[ind[0]+1:ind[1]-1]
+    folder = folder.replace('.', '_')
           
     return folder
 
