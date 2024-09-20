@@ -10,3 +10,5 @@ Scripts in order:
 
 Additional helper scripts:
 1. readNPY.m and readNPYheader.m (from open-ephys-matlab-tools)
+
+For Single Unit analysis, check single-unit/
