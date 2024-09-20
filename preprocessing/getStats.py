@@ -14,8 +14,11 @@ def si_analysis(oe_folder):
     # steps to bandpass filtering, and common median referencing
     raw_rec_AP = si.read_openephys(oe_folder, stream_id="0")    # for music data
     # raw_rec_AP = si.read_openephys(oe_folder, stream_id="0", block_index=0)  # for tuning curve
-    recordingAP_f = bandpass_filter(recording=raw_rec_AP, freq_min=500, freq_max=5000)
-    recordingAP_cmr = common_reference(recording=recordingAP_f, operator="median")
+    recordingAP_f = bandpass_filter(recording=raw_rec_AP, 
+                                    freq_min=500, 
+                                    freq_max=5000)
+    recordingAP_cmr = common_reference(recording=recordingAP_f, 
+                                       operator="median")
 
     return recordingAP_cmr
 
@@ -40,7 +43,9 @@ def artifact_removal(channel, locs):
             if startind <= 0:
                 startind = 0
             endind = locs[i]
-            ind = np.arange(startind, endind, dtype=int)
+            ind = np.arange(startind, 
+                            endind, 
+                            dtype=int)
             channel[ind] = np.nan
             
         else:
@@ -50,7 +55,9 @@ def artifact_removal(channel, locs):
             endind = locs[i]+75000
             if endind >= len(locs)-1:
                 endind = locs[i]
-            ind = np.arange(startind, endind, dtype=int)
+            ind = np.arange(startind, 
+                            endind, 
+                            dtype=int)
             channel[ind] = np.nan
           
     return channel
@@ -79,13 +86,19 @@ def artifact_detection(channel, ref_mean):
 def name_folder(path):
     # create results folder based on original data file
     folder = str(path)
+    while "/" in folder:
+      folder = folder.replace('/', '.')
+      if ':' in folder:
+          folder = folder.replace(':', '')
+          
     while "\\" in folder:
       folder = folder.replace('\\', '.')
       if ':' in folder:
           folder = folder.replace(':', '')
           
     folder = folder.lower()
-    folder_name_loc = re.search(r".p[0-9].\w+.", folder)
+    folder_name_loc = re.search(r".p[0-9].\w+.", folder) # for penetrations <10
+    # folder_name_loc = re.search(r".p[0-9]\w+.\w+.", folder) # for penetrations >=10
     ind = folder_name_loc.span()
     folder = folder[ind[0]+1:ind[1]-1]
     folder = folder.replace('.', '_')
@@ -127,8 +140,12 @@ def get_artifacts(rec, data_dir):
                 if endP > rec.get_num_samples():    # end correction
                     endP = rec.get_num_samples()
         
-                sampl_block = rec.get_traces(return_scaled=False, start_frame=startP, end_frame=endP, channel_ids=[channelID[i]])
-                chan = np.concatenate((chan, sampl_block))
+                sampl_block = rec.get_traces(return_scaled=False, 
+                                             start_frame=startP, 
+                                             end_frame=endP, 
+                                             channel_ids=[channelID[i]])
+                chan = np.concatenate((chan, 
+                                       sampl_block))
         
                 j = endP
                 del sampl_block 
@@ -152,8 +169,11 @@ def get_artifacts(rec, data_dir):
         # np.save(os.path.join(savehere, "clean_channel%s" %i), chan_clean)   # if want to save channel data
 
     # saving statistics for this experiment to be used in spike onset detection
-    stats = pd.DataFrame({'mean': mean_val, 'variance': var_val, '#_valid_dataSamples': num_datasample})   
-    np.save(os.path.join(save_files_here, 'metaData'), stats)   # .npy file saved with the metadata for the experiment
+    stats = pd.DataFrame({'mean': mean_val, 
+                          'variance': var_val, 
+                          '#_valid_dataSamples': num_datasample})   
+    np.save(os.path.join(save_files_here, 
+                         'metaData'), stats)   # .npy file saved with the metadata for the experiment
 
 
 
@@ -165,8 +185,10 @@ def main():
     
     for i in range(0,paths_array.size):
         root = Path(paths_array[i])
+        # root = Path(paths_array.tolist())     # when working with single path in destinations.txt file
         # check if folder is empty
         is_not_empty = any(root.iterdir())      # is_not_empty is True if files present and False if no files
+        # it is not yet checking the inside of the directories (directory inside directory) if it is empty 
         
         if is_not_empty:
             rec_obj = si_analysis(root)
