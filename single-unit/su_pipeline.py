@@ -49,20 +49,28 @@ def si_analysis_SU(exp_paths):
     
     outputdir = destination_dir()
     
-    rec = {}
-    experiment_size = []
-    for ii in range(0, exp_paths.size):
-        rec["raw_rec{0}".format(ii)] =  si.read_openephys(exp_paths[ii], 
-                                                          stream_id="0")
-        experiment_size.append(rec["raw_rec{0}".format(ii)].get_num_samples())
+    # if length > 1 , concatenate, otherwise dont
+    if len(exp_paths) == 1:
+        recording = si.read_openephys(outputdir, 
+                                       stream_id="0")
+        experiment_size = recording.get_num_samples()
         
+    else:    
+        rec = {}
+        experiment_size = []
+        for ii in range(0, exp_paths.size):
+            rec["raw_rec{0}".format(ii)] =  si.read_openephys(exp_paths[ii], 
+                                                              stream_id="0")
+            experiment_size.append(rec["raw_rec{0}".format(ii)].get_num_samples())
+        
+        # combining multiple experiments
+        recording = si.concatenate_recordings( list(rec.values()) )
+    
+    
+    # save file
     exps = np.column_stack((experiment_size,exp_paths))     # col1 : number of samples in the experiment; col2 : path to the experiment
     np.save(outputdir + '/experiment_details.npy', exps)
     
-        
-        
-    # combining multiple experiments
-    recording = si.concatenate_recordings( list(rec.values()) )
     
     # bandpass filtering and common-median referencing
     recording_f = bandpass_filter(recording=recording, 
