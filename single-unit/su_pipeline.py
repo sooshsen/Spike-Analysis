@@ -96,8 +96,13 @@ def si_analysis_SU(exp_paths):
     exps = np.column_stack((experiment_size,exp_paths))     # col1 : number of samples in the experiment; col2 : path to the experiment
     np.save(outputdir + '/experiment_details.npy', exps)
     
-    # comment this line if probe information is already present in the recording and does not require to be added separately
-    recording = get_probeinfo(recording)
+    # to check if this try-except condition works
+    try:
+        rec = recording.get_probe().to_dataframe()
+    except ValueError:
+        print('No probe information found! Adding from external source ...')
+        recording = get_probeinfo(recording)
+        
     
     # bandpass filtering and common-median referencing
     recording_f = bandpass_filter(recording=recording, 
