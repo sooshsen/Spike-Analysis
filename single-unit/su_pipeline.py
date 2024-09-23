@@ -6,11 +6,13 @@ Created on Wed Sep 18 17:18:37 2024
 
 This script is for single unit analysis for sorting the units from all the 
 experiments in a penetration and extract the waveforms
+
+If the probe information is not loaded with the data already, this script will generate error
 """
 
 def destination_dir():
     
-    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/SUA/server/p2/exp_3_4/"
+    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/SUA/server/benny/p3/exp_5_6/"
     # destdir = Path('G:/Final_exps_spikes/SUA/server/p2/test')
     if not os.path.exists(destdir):     # if the required folder does not exist, create one
         os.mkdir(destdir)
@@ -23,13 +25,36 @@ def get_inputs():
     
     # OPEN TXT FILE FOR EXPERIMENT and save as numpy array
     # NOTE: save experiments.txt in folder with scripts
-    all_exps = np.loadtxt("/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/metafiles_SU_Server/experiments_elfie_p2.txt", 
+    all_exps = np.loadtxt("/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/metafiles_SU_Server/experiments_benny_p3.txt", 
                           comments='#',
                           dtype='str')
     # all_exps = np.loadtxt(Path("G:/Sushmita/spike_analysis/metafiles_SU_local/experiments_elfie_p2.txt"), comments='#', dtype='str')
     
     return all_exps
 
+
+def get_probeinfo(recording):
+    '''
+    For Benny and Wendelin, probe maps are to be added separately
+
+    Parameters
+    ----------
+    recording : recording object
+
+    Returns
+    -------
+    recording_with_probe : recording object with probe information
+    '''
+    
+    prb_loc = Path('G:/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json')
+    # prb_loc = '/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json'
+    prb = prbi.read_probeinterface(prb_loc)
+    
+    recording_with_probe = recording.set_probegroup(prb)
+    
+    return recording_with_probe
+
+    
 
 
 def si_analysis_SU(exp_paths):
@@ -71,6 +96,8 @@ def si_analysis_SU(exp_paths):
     exps = np.column_stack((experiment_size,exp_paths))     # col1 : number of samples in the experiment; col2 : path to the experiment
     np.save(outputdir + '/experiment_details.npy', exps)
     
+    # comment this line if probe information is already present in the recording and does not require to be added separately
+    recording = get_probeinfo(recording)
     
     # bandpass filtering and common-median referencing
     recording_f = bandpass_filter(recording=recording, 
@@ -83,6 +110,7 @@ def si_analysis_SU(exp_paths):
     
     return recording_cmr, experiment_size
     
+
     
 def plot_traces(recording, recording_f, recording_cmr):
     ## Not mandatory
@@ -269,7 +297,8 @@ def name_folder(path):
       folder = folder.replace('\\', '.')
       if ':' in folder:
           folder = folder.replace(':', '')
-     
+
+          
     folder = folder.lower()
     folder_name_loc = re.search(r".p[0-9].\w+.", folder) # for penetrations <10
     # folder_name_loc = re.search(r".p[0-9]\w+.\w+.", folder) # for penetrations >=10
@@ -288,7 +317,7 @@ def get_spiketrains(sorting, explen, expname):
     
     Parameters
     ----------
-    sorting : sorting object obtained after running run_sorter()
+    sorting :
     explen : list of number of datasamples in each experiment
 
     Returns
@@ -355,19 +384,19 @@ def main():
     
     recordingAP, exp_size = si_analysis_SU(all_exps)
     # save preprocessed recording 
-    recordingAP_pps = recordingAP.save(folder=outputdir + '/preprocessing',  
-                                       format='binary', 
-                                       overwrite=True)
+    # recordingAP_pps = recordingAP.save(folder=outputdir + '/preprocessing',  
+    #                                    format='binary', 
+    #                                    overwrite=True)
     
     job_kwargs = dict(n_jobs=50, chunk_duration='1s', progress_bar=True)
     si.set_global_job_kwargs(**job_kwargs)
     
     ## SORTING
     # ss.installed_sorters()  # check installed sorters
-    sorting = sort_spikes(recordingAP_pps, outputdir)
+    sorting = sort_spikes(recordingAP, outputdir)
     
     ## EXTRACT WAVEFORMS
-    wfe = get_waveforms(recordingAP_pps, sorting)
+    wfe = get_waveforms(recordingAP, sorting)
     
     ## QUALITY METRICS
     metrics, good_metrics = check_quality(wfe)
@@ -377,7 +406,6 @@ def main():
     
     
     # continued in Matlab after this ...
-    
     
     
 
@@ -391,11 +419,11 @@ import spikeinterface.sorters as ss
 import spikeinterface.curation as sc
 from spikeinterface import extract_waveforms
 import spikeinterface.qualitymetrics as qm
-
+import probeinterface as prbi
 
 from itertools import accumulate
 import operator
-# from pathlib import Path
+from pathlib import Path
 import os
 import re
 
