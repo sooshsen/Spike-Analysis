@@ -157,7 +157,7 @@ def plot_traces(recording, recording_f, recording_cmr):
 
 
 
-def sort_spikes(recording, outputdir):
+def sort_spikes(recording):
     '''
     we are using Kilosort4 for spike sorting
     
@@ -171,6 +171,8 @@ def sort_spikes(recording, outputdir):
     sorting : sorting object 
 
     '''
+    
+    outputdir = destination_dir()
     
     k4_params = ss.Kilosort4Sorter.default_params()
     k4_params['Th_learned'] = 4      # modified threshold from 8 to 4
@@ -392,8 +394,6 @@ def get_spiketrains(sorting, explen, expname):
 
 def main():
     
-    outputdir = destination_dir()       # save all generated files in this directory
-    
     all_exps = get_inputs()     # this array has information on paths to each experiment; can be used to create folder names
     
     ## GET RECORDING OBJECT
@@ -409,7 +409,7 @@ def main():
     
     ## SORTING
     # ss.installed_sorters()  # check installed sorters
-    sorting = sort_spikes(recordingAP, outputdir)
+    sorting = sort_spikes(recordingAP)
     print('\n')
     
     ## EXTRACT WAVEFORMS
