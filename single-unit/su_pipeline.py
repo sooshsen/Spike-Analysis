@@ -51,8 +51,10 @@ def get_probeinfo(recording):
     prb_loc = '/home/ssenapat/groups/PrimNeu/Ying/fromAryo/generate_probe_map/probe_Benny_2.json'
     prb = prbi.read_probeinterface(prb_loc)
     
-    # to check the probe
-    probe_df = prb.to_dataframe()
+    # # to check the probe
+    # probe_df = prb.to_dataframe()
+    # %matplotlib qt
+    # plot_probe_group(prb, with_device_index=True)
     
     recording_with_probe = recording.set_probegroup(prb)
     
@@ -440,6 +442,7 @@ import spikeinterface.curation as sc
 from spikeinterface import extract_waveforms
 import spikeinterface.qualitymetrics as qm
 import probeinterface as prbi
+# from probeinterface.plotting import plot_probe_group
 
 from itertools import accumulate
 import operator
