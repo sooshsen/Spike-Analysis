@@ -7,12 +7,12 @@ Created on Wed Sep 18 17:18:37 2024
 This script is for single unit analysis for sorting the units from all the 
 experiments in a penetration and extract the waveforms
 
-If the probe information is not loaded with the data already, this script will generate error
+If the probe information is not loaded with the data already, you have provide external JSON input (or else it will generate error)
 """
 
 def destination_dir():
     
-    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/SUA/server/benny/p3/exp_5_6/"
+    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/SUA/server/benny/p3/exp_5/"
     # destdir = Path('G:/Final_exps_spikes/SUA/server/p2/test')
     if not os.path.exists(destdir):     # if the required folder does not exist, create one
         os.mkdir(destdir)
@@ -28,7 +28,7 @@ def get_inputs():
     all_exps = np.loadtxt("/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/metafiles_SU_Server/experiments_benny_p3.txt", 
                           comments='#',
                           dtype='str')
-    # all_exps = np.loadtxt(Path("G:/Sushmita/spike_analysis/metafiles_SU_local/experiments_elfie_p2.txt"), comments='#', dtype='str')
+    # all_exps = np.loadtxt(Path("G:/Sushmita/spike_analysis/metafiles_SU_local/experiments_benny_p3.txt"), comments='#', dtype='str')
     
     return all_exps
 
@@ -46,9 +46,13 @@ def get_probeinfo(recording):
     recording_with_probe : recording object with probe information
     '''
     
-    prb_loc = Path('G:/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json')
-    # prb_loc = '/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json'
+    # current json file in path is a dummy
+    # prb_loc = Path('G:/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json')
+    prb_loc = '/home/ssenapat/groups/PrimNeu/Ying/fromAryo/generate_probe_map/probe_Benny_2.json'
     prb = prbi.read_probeinterface(prb_loc)
+    
+    # to check the probe
+    probe_df = prb.to_dataframe()
     
     recording_with_probe = recording.set_probegroup(prb)
     
@@ -74,9 +78,10 @@ def si_analysis_SU(exp_paths):
     
     outputdir = destination_dir()
     
-    # if length > 1 , concatenate, otherwise dont
-    if len(exp_paths) == 1:
-        recording = si.read_openephys(outputdir, 
+    # if length > 1 , concatenate, otherwise dont  # i.e. if there is only one path provided in the path file
+    if exp_paths.size == 1:
+        exp_path_list = exp_paths.tolist()
+        recording = si.read_openephys(exp_path_list, 
                                        stream_id="0")
         experiment_size = recording.get_num_samples()
         
@@ -103,6 +108,7 @@ def si_analysis_SU(exp_paths):
         print('No probe information found! Adding from external source ...')
         recording = get_probeinfo(recording)
         
+            
     
     # bandpass filtering and common-median referencing
     recording_f = bandpass_filter(recording=recording, 
@@ -319,6 +325,7 @@ def name_folder(path):
 def get_spiketrains(sorting, explen, expname):
     '''
     Timing information of spikes from all units, aiming to separate these spikes based on experiments they came from
+    NOTE: If there was only one experiment in the original path file, then this will not run
     
     Parameters
     ----------
@@ -387,7 +394,9 @@ def main():
     
     all_exps = get_inputs()     # this array has information on paths to each experiment; can be used to create folder names
     
+    ## GET RECORDING OBJECT
     recordingAP, exp_size = si_analysis_SU(all_exps)
+    print('\n')
     # save preprocessed recording 
     # recordingAP_pps = recordingAP.save(folder=outputdir + '/preprocessing',  
     #                                    format='binary', 
@@ -399,18 +408,24 @@ def main():
     ## SORTING
     # ss.installed_sorters()  # check installed sorters
     sorting = sort_spikes(recordingAP, outputdir)
+    print('\n')
     
     ## EXTRACT WAVEFORMS
     wfe = get_waveforms(recordingAP, sorting)
+    print('\n')
     
     ## QUALITY METRICS
     metrics, good_metrics = check_quality(wfe)
+    print('\n')
     
-    ## OBTAIN SPIKETRAINS PER EXPERIMENT
-    get_spiketrains(sorting, exp_size, all_exps)
+    if all_exps.size != 1:
+        ## OBTAIN SPIKETRAINS PER EXPERIMENT
+        get_spiketrains(sorting, exp_size, all_exps)
+        print('\n')
     
     
     # continued in Matlab after this ...
+    
     
     
 
@@ -428,7 +443,7 @@ import probeinterface as prbi
 
 from itertools import accumulate
 import operator
-from pathlib import Path
+# from pathlib import Path
 import os
 import re
 
