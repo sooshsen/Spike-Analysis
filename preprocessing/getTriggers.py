@@ -40,18 +40,19 @@ def name_folder(path):
 
 
 def trigger_onset(trigger, savehere):
-    # original
-    trigger_original = np.append(trigger, 0)
-    # phase-shifted trigger
-    trigger_phaseshifted = np.insert(trigger, 0, 0)
+    # 
+    trigger_diff = np.diff(trigger, n=1)   # trigger[i+1] - trigger[i] 
     
-    trigger_in = np.subtract(trigger_phaseshifted, trigger_original)
+    # find indices where the values are 1 after the subtraction
+    trigger_onset_loc = np.where(trigger_diff == 1)       # generates a tuple
     
-    # find the loci with value == 1
-    trigger_loci = np.where(trigger_in == 1)
+    # separate for further python-based and matlab-based analysis
+    trigger_ind_for_py = trigger_onset_loc[0] + 1
+    trigger_ind_for_matlab = trigger_onset_loc[0] + 2        # NOTE: In Matlab, index starts from 1 (not 0)
     
     # save the locations of the trigger onsets
-    np.save(os.path.join(savehere, 'trigger_loci'), trigger_loci)
+    np.save(os.path.join(savehere, 'trigger_onset_for_py'), trigger_ind_for_py)
+    np.save(os.path.join(savehere, 'trigger_onset_for_matlab'), trigger_ind_for_matlab)
     
     
 
@@ -149,6 +150,7 @@ def main():
 from open_ephys.analysis import Session
 from pathlib import Path
 import numpy as np
+import pandas as pd
 import os
 import re
 
