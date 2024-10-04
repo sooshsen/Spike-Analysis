@@ -107,7 +107,7 @@ def si_analysis_pps(exp_paths):
 
 def split_chans(recording):
     '''
-    Gets preprocessed recording as input
+    Gets preprocessed recording as input and saves each channel recording for all experiments
 
     Parameters
     ----------
