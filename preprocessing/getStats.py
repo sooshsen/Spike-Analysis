@@ -38,27 +38,16 @@ def artifact_removal(channel, locs):
     
     for i in range(0,len(locs)):
         
-        if i == len(locs)-1:
-            startind = locs[i]-75000
-            if startind <= 0:
-                startind = 0
-            endind = locs[i]
-            ind = np.arange(startind, 
-                            endind, 
-                            dtype=int)
-            channel[ind] = np.nan
+        startind = locs[i]-75000
+        if startind <= 0:
+            startind = 0
             
-        else:
-            startind = locs[i]-75000
-            if startind <= 0:
-                startind = 0
-            endind = locs[i]+75000
-            if endind >= len(locs)-1:
-                endind = locs[i]
-            ind = np.arange(startind, 
-                            endind, 
-                            dtype=int)
-            channel[ind] = np.nan
+        endind = locs[i]+75000
+        if endind >= len(channel)-1:
+            endind = len(channel)-1
+            
+        ind = np.arange(startind, endind, dtype=int)
+        channel[ind] = np.nan
           
     return channel
         
