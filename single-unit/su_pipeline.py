@@ -12,8 +12,8 @@ If the probe information is not loaded with the data already, you have provide e
 
 def destination_dir():
     
-    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/SUA/server/benny/p3/exp_5/"
-    # destdir = Path('G:/Final_exps_spikes/SUA/server/p2/test')
+    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/SUA/server/benny/p3"
+    # destdir = Path('G:/Final_exps_spikes/SUA/server/p2')
     if not os.path.exists(destdir):     # if the required folder does not exist, create one
         os.mkdir(destdir)
     
@@ -47,8 +47,8 @@ def get_probeinfo(recording):
     '''
     
     # current json file in path is a dummy
-    # prb_loc = Path('G:/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json')
-    prb_loc = '/home/ssenapat/groups/PrimNeu/Ying/fromAryo/generate_probe_map/probe_Benny_2.json'
+    # prb_loc = Path('G:/Final_exps_spikes/probe_information/Benny/Benny_p3_1.json')
+    prb_loc = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/probe_information/Benny/Benny_p3_1.json'
     prb = prbi.read_probeinterface(prb_loc)
     
     # # to check the probe
