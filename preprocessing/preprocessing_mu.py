@@ -11,8 +11,8 @@ WHOLE NEW SCRIPT WITH DRIFT CORRECTION FOR MULTI-UNIT ANALYSIS
 def destination_dir():
     # folder where preprocessed data is to be saved
     
-    # destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/preprocessed_data/Elfie/p2"
-    destdir = Path('G:/Final_exps_spikes/preprocessed_data/Elfie/p2_test')
+    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/preprocessed_data/Elfie/p2"
+    # destdir = Path('G:/Final_exps_spikes/preprocessed_data/Elfie/p2_test')
     if not os.path.exists(destdir):     # if the required folder does not exist, create one
         os.mkdir(destdir)
     
@@ -23,14 +23,14 @@ def get_inputs():
     
     # OPEN TXT FILE FOR EXPERIMENT and save as numpy array
     # NOTE: save experiments.txt in folder with scripts
-    # all_exps = np.loadtxt("/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/metafiles_Server/destinations_elfie_p2.txt", 
-    #                       comments='#',
-    #                       dtype='str')
-    all_exps = np.loadtxt(Path("G:/Sushmita/spike_analysis/metafiles_Local/destinations_elfie_p2.txt"), comments='#', dtype='str')
+    all_exps = np.loadtxt("/home/ssenapat/groups/PrimNeu/Sushmita/spike_analysis/metafiles_Server/destinations_elfie_p2.txt", 
+                          comments='#',
+                          dtype='str')
+    # all_exps = np.loadtxt(Path("G:/Sushmita/spike_analysis/metafiles_Local/destinations_elfie_p2.txt"), comments='#', dtype='str')
     
     return all_exps
 
-'''
+
 def name_folder(path):
     # create results folder based on original data file
     folder = str(path)
@@ -53,7 +53,7 @@ def name_folder(path):
     folder = folder.replace('.', '_')
           
     return folder
-'''
+
 
 
 def si_analysis_pps(exp_paths):
@@ -69,23 +69,34 @@ def si_analysis_pps(exp_paths):
     recording_dc : preprocessed recording object
 
     '''
+    outputdir = destination_dir()
     
     # if length > 1 , concatenate, otherwise dont  # i.e. if there is only one path provided in the path file
     if exp_paths.size == 1:
         exp_path_list = exp_paths.tolist()
         recording = si.read_openephys(exp_path_list, 
                                        stream_id="0")
+        experiment_size = recording.get_num_samples()
         
     else:    
         rec = {}
+        experiment_size = []
         for ii in range(0, exp_paths.size):
             rec["raw_rec{0}".format(ii)] =  si.read_openephys(exp_paths[ii], 
                                                               stream_id="0")
+            experiment_size.append(rec["raw_rec{0}".format(ii)].get_num_samples())
         
         # combining multiple experiments
         recording = si.concatenate_recordings( list(rec.values()) )
     
-    print('Number of segments in this recording: ', recording.get_num_segments())
+    
+    # save file
+    exps = np.column_stack((experiment_size,exp_paths))     # col1 : number of samples in the experiment; col2 : path to the experiment
+    np.save(outputdir + '/experiment_details.npy', exps)
+    
+    print('Number of segments: ', recording.get_num_segments())
+    print('Sampling frequency: ', recording.get_sampling_frequency())
+    print('Data type: ', recording.get_dtype())
     
     # bandpass filtering
     recording_f = bandpass_filter(recording=recording, 
@@ -98,6 +109,7 @@ def si_analysis_pps(exp_paths):
     # motion_dir = outputdir + '/motion/nonrigid_acc/'
     recording_dc = correct_motion(recording=recording_cmr, preset='nonrigid_accurate')
     # NOTE: After drift correction, some channels might be removed
+
 
     
     return recording_cmr, recording_dc
@@ -112,6 +124,7 @@ def split_chans(recording):
     Parameters
     ----------
     recording : preprocessed recording
+
     
     Saves the split recording, i.e. split into individual channels
     '''
@@ -131,9 +144,14 @@ def split_chans(recording):
         recording_pps = rec.save(folder=str(outputdir) + '/' + str(ids[ii]),
                                             format='binary', 
                                             overwrite=True)
+        
+    recording_pps = recording.save(folder=str(outputdir) + '/preprocessed',
+                                        format='binary', 
+                                        overwrite=True)
     
     return split_rec
     
+
 
 
 
@@ -143,9 +161,7 @@ def main():
     # outputdir = destination_dir()
     # foldername = name_folder(all_exps[0])
 
-    job_kwargs = dict(n_jobs=50, 
-                      chunk_duration='1s', 
-                      progress_bar=True)
+    job_kwargs = dict(n_jobs=20, chunk_duration='1s', progress_bar=True)
     si.set_global_job_kwargs(**job_kwargs)
 
 
@@ -161,7 +177,7 @@ def main():
     
 
 
-# imports
+# get imports
 import spikeinterface.full as si
 from spikeinterface.preprocessing import bandpass_filter, common_reference, correct_motion
 
@@ -173,5 +189,5 @@ import os
 import re
 
 
-# Run
+# RUN
 main()
