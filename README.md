@@ -1,4 +1,4 @@
-# spike-analysis
+# Spike-Analysis
 
 Contains scripts necessary for running downstream analysis on open-ephys data
 Required external program installations: Spike Interface
