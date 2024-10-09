@@ -248,6 +248,31 @@ def split_into_exps(onsets, explen, exppath, channelpath):
 
 
 
+def main():
+    
+    job_kwargs = dict(n_jobs=4, chunk_duration='1s', progress_bar=True)
+    si.set_global_job_kwargs(**job_kwargs)
+
+    # obtain the saved channel recording
+    path_chan, rec_chan, exp_len, exp_path = get_input_chan()
+
+    # # check the channel trace
+    # %matplotlib qt
+    # si.plot_traces(rec_chan)
+
+
+    # obtain the spike onset timings for all experiments
+    onsets = detect_onsets(rec_chan)
+
+    # split the onsets into individual experiments and save the spike onset times for each expeeriment
+
+    split_into_exps(onsets, exp_len, exp_path, path_chan)
+    
+    
+    # continued in Matlab ...
+    
+
+
 
 # get all imports
 import spikeinterface.full as si
@@ -263,23 +288,5 @@ import re
 from itertools import accumulate
 import operator
 
-# main()
-
-job_kwargs = dict(n_jobs=4, chunk_duration='1s', progress_bar=True)
-si.set_global_job_kwargs(**job_kwargs)
-
-# obtain the saved channel recording
-path_chan, rec_chan, exp_len, exp_path = get_input_chan()
-
-# # check the channel trace
-# %matplotlib qt
-# si.plot_traces(rec_chan)
-
-
-# obtain the spike onset timings for all experiments
-onsets = detect_onsets(rec_chan)
-
-# split the onsets into individual experiments
-
-split_into_exps(onsets, exp_len, exp_path, path_chan)
+main()
 
