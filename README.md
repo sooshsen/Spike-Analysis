@@ -1,7 +1,7 @@
 # Spike-Analysis
 
-Contains scripts necessary for running downstream analysis on open-ephys data
-Required external program installations: Spike Interface
+Contains scripts necessary for running downstream analysis on open-ephys data. 
+Required external program installations: Spike Interface (https://github.com/SpikeInterface/spikeinterface.git)
 
 1. PREPROCESSING
    Read open-ephys recording into python and perform (i) Bandpass Filtering, (ii) Common Median Referencing, and (iii) Drift Correction.
