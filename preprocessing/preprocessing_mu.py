@@ -31,6 +31,36 @@ def get_inputs():
     return all_exps
 
 
+def get_probeinfo(recording):
+    '''
+    For Benny and Wendelin, probe maps are to be added separately
+
+    Parameters
+    ----------
+    recording : recording object
+    Returns
+    -------
+    recording_with_probe : recording object with probe information
+    
+    '''
+    
+    # current json file in path is a dummy
+    # prb_loc = Path('G:/Sushmita/spike_analysis/probe-settings_copy_from_Aryo/probe_setup.json')
+    prb_loc = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/probe_information/Benny/Benny_p2_1.json'
+    prb = prbi.read_probeinterface(prb_loc)
+    
+    # # to check the probe
+    # probe_df = prb.to_dataframe()
+    # %matplotlib qt
+    # plot_probe_group(prb, with_device_index=True)
+    
+    recording_with_probe = recording.set_probegroup(prb)
+    
+    return recording_with_probe
+
+
+
+
 def name_folder(path):
     # create results folder based on original data file
     folder = str(path)
@@ -63,7 +93,6 @@ def si_analysis_pps(exp_paths):
     Parameters
     ----------
     exp_paths : list of path to all experiments for this penetration
-
     Returns
     -------
     recording_dc : preprocessed recording object
@@ -98,6 +127,15 @@ def si_analysis_pps(exp_paths):
     print('Sampling frequency: ', recording.get_sampling_frequency())
     print('Data type: ', recording.get_dtype())
     
+    
+    # to check if this try-except condition works
+    try:
+        rec = recording.get_probe().to_dataframe()
+    except ValueError:
+        print('No probe information found! Adding from external source ...')
+        recording = get_probeinfo(recording) 
+    
+    
     # bandpass filtering
     recording_f = bandpass_filter(recording=recording, 
                                   freq_min=500, 
@@ -110,8 +148,6 @@ def si_analysis_pps(exp_paths):
     recording_dc = correct_motion(recording=recording_cmr, preset='nonrigid_accurate')
     # NOTE: After drift correction, some channels might be removed
 
-
-    
     return recording_cmr, recording_dc
 
 
@@ -124,8 +160,6 @@ def split_chans(recording):
     Parameters
     ----------
     recording : preprocessed recording
-
-    
     Saves the split recording, i.e. split into individual channels
     '''
     outputdir = destination_dir()
@@ -139,20 +173,18 @@ def split_chans(recording):
     ids = recording.get_channel_ids()
 
     # save each channel for all experiments as a recording object
-    for ii in range(0,len(recording.get_channel_ids())):
+    for ii in range(0,len(ids)):
         rec = split_rec[ii]
         recording_pps = rec.save(folder=str(outputdir) + '/' + str(ids[ii]),
                                             format='binary', 
                                             overwrite=True)
         
-    recording_pps = recording.save(folder=str(outputdir) + '/preprocessed',
-                                        format='binary', 
-                                        overwrite=True)
+    # recording_pps = recording.save(folder=str(outputdir) + '/preprocessed',
+    #                                     format='binary', 
+    #                                     overwrite=True)
     
-    return split_rec
+    # return split_rec
     
-
-
 
 
 def main():
@@ -163,7 +195,6 @@ def main():
 
     job_kwargs = dict(n_jobs=20, chunk_duration='1s', progress_bar=True)
     si.set_global_job_kwargs(**job_kwargs)
-
 
     print('\n')
     ## GET RECORDING OBJECT
@@ -177,9 +208,9 @@ def main():
     
 
 
-# get imports
 import spikeinterface.full as si
 from spikeinterface.preprocessing import bandpass_filter, common_reference, correct_motion
+import probeinterface as prbi
 
 import numpy as np
 # import pandas as pd
@@ -189,5 +220,6 @@ import os
 import re
 
 
-# RUN
+
+# run
 main()
