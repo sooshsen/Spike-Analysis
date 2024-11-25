@@ -9,6 +9,14 @@ NOTE: First have to finalise this pipeline for tuning curve data for obtaining a
 """
 
 def load_trigger():
+    '''
+    Returns
+    -------
+    sorted_trigger_loc : TYPE
+        Generates trigger information in increasing order of frequency
+        thus, repeated freq are clustered together
+
+    '''
     # read the saved trigger channel info
     file = Path('G:/Final_exps_spikes/LFP/Elfie/p2/p2_1_1/trigger_onset_for_py.npy')
     freq_order = Path('G:/Sushmita/spike_analysis/trigger_frequency_arrangements/for_p2_tc/et_400.npy')
@@ -20,8 +28,9 @@ def load_trigger():
     sorted_triggers = triggers.sort_values(by = [0], ignore_index = True)
     # sorted_trigger_loc = pd.DataFrame(sorted_triggers[1])
     sorted_trigger_loc = sorted_triggers[1].astype('int64')
+    sorted_trigger_freq = np.unique(sorted_triggers[0].astype('int64'))
     
-    return sorted_trigger_loc
+    return sorted_trigger_loc, sorted_trigger_freq
 
 
 
@@ -90,7 +99,7 @@ def artifact_detection(channel, ref_mean):
     return channel
 
 
-def save_plots(channel, channel_num, savehere):
+def save_plots(channel, channel_num, trigger_freq, savehere):
     
     chan_matrix = np.zeros(1000)
 
@@ -100,34 +109,73 @@ def save_plots(channel, channel_num, savehere):
         chan_matrix = np.vstack([chan_matrix, relevant_points])
     
     chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
-
+    # to save this matrix
+    DF = pd.DataFrame(chan_matrix)
+    DF.to_csv(str(savehere) + '/channel' + str(channel_num) + '_allamps.csv')
 
     ### USE NUMPY ARRAY SPLIT() HERE
     # averaging across each datapoint in this matrix (40 plots per channel, since averaging to be done for every 10 consecutive tones)
-    datapoint_mean = np.mean(chan_matrix, axis=0)
+    avg_every_tone = np.zeros(1000)
     
-    #%matplotlib qt
-    fig = plt.plot(datapoint_mean, color='black')
-    plt.axvline(x = 251, color = 'r', linestyle='dashed')
-
-    ticks = np.arange(0, 1200, 250)
-    ticklabels = ([-100, 0, 100, 200, 300])
-    plt.xticks(ticks, ticklabels)
-    plt.title('Channel ' + str(channel_num))
-    plt.xlabel('Time (in ms)')
-    plt.ylabel('Amplitude (in mV)')
-    plt.ylim(top=300)
-    plt.ylim(bottom=-300)
+    for ii in range(40):
+        mean_across_tone = np.mean(chan_matrix[ii:ii+10], axis=0)
+        avg_every_tone = np.vstack([avg_every_tone, mean_across_tone])
+        ii = ii+10
+    
+    avg_every_tone = np.delete(avg_every_tone, [0], axis=0) # remove 1st row, which is not crucial
+        
+        
+    
+    # #%matplotlib qt
+   
+    x = range(1000)
+    fig, axs = plt.subplots(1, 2, figsize=(4, 10), dpi=80)
+    
+    # plot all avg amplitudes per channel
+    for ii in range(40):
+        axs[0].plot(x, avg_every_tone[ii] + ii*100, 'k')
+    
+    axs[0].axvline(x = 251, color = 'r', linestyle='dashed')
+    
+    x_ticks = np.arange(0, 1200, 250)
+    x_ticklabels = ([-100, 0, 100, 200, 300])
+    axs[0].set_xticks(x_ticks)
+    axs[0].set_xticklabels(x_ticklabels)
+    
+    y_ticks = np.arange(0, 4000, 100)
+    y_ticklabels = (trigger_freq)
+    axs[0].set_yticks(y_ticks)
+    axs[0].set_yticklabels(y_ticklabels)
+    
+    axs[0].set_ylim(-75, 4000)
+    
+    axs[0].set_xlabel('Time (in ms)')
+    axs[0].set_ylabel('Frequency (in Hz)')
+    # axs[0].set_title('Average amplitude per frequency')
+    
+    
+    # heatmap
+    # fig = plt.subplots(figsize=(5, 10), dpi=80)
+    x_ticks = np.arange(0, 1200, 250)
+    x_ticklabels = ([-100, 0, 100, 200, 300])
+    
+    axs[1] = sns.heatmap(np.flip(avg_every_tone, 0), yticklabels = np.flip(trigger_freq, 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
+    axs[1].set_xticks(x_ticks)
+    axs[1].set_xticklabels(x_ticklabels)
+    axs[1].axvline(x = 251, color = 'w', linestyle='dashed')
+    axs[1].set_xlabel('Time (in ms)')
+    # axs[1].set_title('Average amplitude per frequency - heatmap')
     
     plt.savefig(str(savehere) + '/channel' + str(channel_num) + '.png')
     plt.close()
     
-    
+   
 
 import numpy as np
 import pandas as pd
 from pathlib import Path
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 import spikeinterface.full as si
 from spikeinterface.preprocessing import bandpass_filter, common_reference
@@ -137,7 +185,7 @@ from spikeinterface.preprocessing import bandpass_filter, common_reference
 # def main():
     
 recording = load_recording()
-trigger = load_trigger()
+trigger, trigger_freq = load_trigger()
     
 # steps before getting rid of artifacts
 chans = recording.get_traces()      # #samples-by-#channels
@@ -160,10 +208,10 @@ chans_upd = (np.delete(chans_upd, [0], axis=0)).T
 savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p2/p2_1_1/plots')
 
 # for c in range(len(chans_upd.T)):
-for c in range(5):
+for c in range(384):
     
     chan = chans_upd[:,c]
-    save_plots(chan, c+1, savehere)
+    save_plots(chan, c+1, trigger_freq, savehere)
 
 
 
