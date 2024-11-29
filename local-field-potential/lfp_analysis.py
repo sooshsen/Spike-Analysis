@@ -30,7 +30,7 @@ def load_trigger():
     sorted_trigger_loc = sorted_triggers[1].astype('int64')
     sorted_trigger_freq = np.unique(sorted_triggers[0].astype('int64'))
     
-    return sorted_trigger_loc, sorted_trigger_freq
+    return sorted_triggers, sorted_trigger_loc, sorted_trigger_freq
 
 
 
@@ -99,7 +99,7 @@ def artifact_detection(channel, ref_mean):
     return channel
 
 
-def save_plots(channel, channel_num, trigger_freq, savehere):
+def plot_tones_per_channel(channel, channel_num, trigger, trigger_freq, savehere):
     
     chan_matrix = np.zeros(1000)
 
@@ -111,7 +111,7 @@ def save_plots(channel, channel_num, trigger_freq, savehere):
     chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
     # to save this matrix
     DF = pd.DataFrame(chan_matrix)
-    DF.to_csv(str(savehere) + '/channel' + str(channel_num) + '_allamps.csv')
+    DF.to_csv(str(savehere) + '/channel' + str(channel_num) + '_allAmps.csv')
 
     ### USE NUMPY ARRAY SPLIT() HERE
     # averaging across each datapoint in this matrix (40 plots per channel, since averaging to be done for every 10 consecutive tones)
@@ -127,9 +127,13 @@ def save_plots(channel, channel_num, trigger_freq, savehere):
         
     
     # #%matplotlib qt
-   
+    
+    
     x = range(1000)
-    fig, axs = plt.subplots(1, 2, figsize=(4, 10), dpi=80)
+    fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 3]})
+    fig.tight_layout()
+    fig.set_figheight(15)
+    fig.set_figwidth(20)
     
     # plot all avg amplitudes per channel
     for ii in range(40):
@@ -161,7 +165,7 @@ def save_plots(channel, channel_num, trigger_freq, savehere):
     
     axs[1] = sns.heatmap(np.flip(avg_every_tone, 0), yticklabels = np.flip(trigger_freq, 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
     axs[1].set_xticks(x_ticks)
-    axs[1].set_xticklabels(x_ticklabels)
+    axs[1].set_xticklabels(x_ticklabels, rotation=0)
     axs[1].axvline(x = 251, color = 'w', linestyle='dashed')
     axs[1].set_xlabel('Time (in ms)')
     # axs[1].set_title('Average amplitude per frequency - heatmap')
@@ -169,7 +173,67 @@ def save_plots(channel, channel_num, trigger_freq, savehere):
     plt.savefig(str(savehere) + '/channel' + str(channel_num) + '.png')
     plt.close()
     
-   
+
+
+def plot_channels_per_tone(allchans, trial, freq, trigger_num, savehere):
+    chan_matrix = np.zeros(1000)
+    # chanm = []
+    # arraged as: chan1 10 trials, chan2 10 trials, and so on ...
+    
+    # needs to be split into even and odd channel matrix
+    for chan in range(len(allchans.T)):
+        channel = allchans[:,chan]
+        
+        for ii in range(len(trial)):
+            # relevant_points = channel[trigger[1].iloc[ii]-250:trigger[1].iloc[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
+            relevant_points = channel[trial[ii]-250:trial[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
+            chan_matrix = np.vstack([chan_matrix, relevant_points])
+            # chanm.append(relevant_points)
+            
+    chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
+    
+    avg_every_channel = np.zeros(1000)
+    
+    for ii in range(384):
+        mean_across_channel = np.mean(chan_matrix[ii:ii+10], axis=0)
+        avg_every_channel = np.vstack([avg_every_channel, mean_across_channel])
+        ii = ii+10
+        
+    avg_every_channel = np.delete(avg_every_channel, [0], axis=0) # remove 1st row, which is not crucial
+    
+    # #%matplotlib qt
+    
+    # x = range(1000)
+    # fig1 = plt.figure()
+    # axs = fig1.gca()
+    
+    # # plot all avg amplitudes per channel
+    # for ii in range(384):
+    #     axs.plot(x, avg_every_channel[ii] + ii*100, 'k')
+    
+    # fig1.axvline(x = 251, color = 'r', linestyle='dashed')
+    
+    
+    
+    # heatmap
+    # fig = plt.subplots(figsize=(5, 10), dpi=80)
+    x_ticks = np.arange(0, 1200, 250)
+    x_ticklabels = ([-100, 0, 100, 200, 300])
+    
+    # axs = sns.heatmap(np.flip(avg_every_channel, 0), yticklabels = np.flip([range(384)], 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
+    axs = sns.heatmap(avg_every_channel, cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
+    axs.set_xticks(x_ticks)
+    axs.set_xticklabels(x_ticklabels, rotation=0)
+    axs.axvline(x = 251, color = 'w', linestyle='dashed')
+    axs.set_xlabel('Time (in ms)')
+    axs.set_title('Trigger frequency:' + str(freq) + ' Hz' )
+    
+    plt.savefig(str(savehere) + '/trigger' + str(freq) + 'Hz_hm.png')
+    plt.close()
+    
+    
+    
+    
 
 import numpy as np
 import pandas as pd
@@ -185,7 +249,7 @@ from spikeinterface.preprocessing import bandpass_filter, common_reference
 # def main():
     
 recording = load_recording()
-trigger, trigger_freq = load_trigger()
+trigger_df, trigger, trigger_freq = load_trigger()
     
 # steps before getting rid of artifacts
 chans = recording.get_traces()      # #samples-by-#channels
@@ -205,17 +269,19 @@ chans_upd = (np.delete(chans_upd, [0], axis=0)).T
 
 # plotting for each channel
 
-savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p2/p2_1_1/plots')
+savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p2/p2_1_1/plots/')
 
 # for c in range(len(chans_upd.T)):
-for c in range(384):
+# for c in range(384):
     
-    chan = chans_upd[:,c]
-    save_plots(chan, c+1, trigger_freq, savehere)
+#     chan = chans_upd[:,c]
+#     plot_tones_per_channel(chan, c+1, trigger, trigger_freq, savehere)
 
 
-
-
+for t in range(len(trigger_freq)):
+    
+    trigger_subset = trigger[trigger_df.iloc[:,0] == trigger_freq[t]].reset_index(drop=True)
+    plot_channels_per_tone(chans_upd, trigger_subset, trigger_freq[t], t+1, savehere)
 
 '''
 #plot out a channel to set criteria for artifact detection
