@@ -170,7 +170,11 @@ def plot_tones_per_channel(channel, channel_num, trigger, trigger_freq, savehere
     axs[1].set_xlabel('Time (in ms)')
     # axs[1].set_title('Average amplitude per frequency - heatmap')
     
-    plt.savefig(str(savehere) + '/channel' + str(channel_num) + '.png')
+    save_loc = str(savehere) + '/tones_per_channel'
+    if not os.path.exists(save_loc):     # if the required folder does not exist, create one
+        os.mkdir(save_loc)
+    
+    plt.savefig(str(save_loc) + '/channel' + str(channel_num) + '.png')
     plt.close()
     
 
