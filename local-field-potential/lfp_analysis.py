@@ -175,68 +175,41 @@ def plot_tones_per_channel(channel, channel_num, trigger, trigger_freq, savehere
     
 
 
-def plot_channels_per_tone(allchans, trial, freq, trigger_num, savehere):
+def plot_channels_per_tone(allchans, trial, freq, trigger_num, savehere, depths):
     
     # arraged as: chan1 10 trials, chan2 10 trials, and so on ...
+
+    chan_matrix = np.zeros(1000)
     
-    # ALL ODD CHANNELS
-    odd_chan_matrix = np.zeros(1000)
-    
-    for chan in range(0,len(allchans.T),2):
-        oddchannel = allchans[:,chan]
+    for chan in range(0,len(allchans.T)):
+        channel = allchans[:,chan]
         
         for ii in range(len(trial)):
             # relevant_points = channel[trigger[1].iloc[ii]-250:trigger[1].iloc[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
-            relevant_points = oddchannel[trial[ii]-250:trial[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
-            odd_chan_matrix = np.vstack([odd_chan_matrix, relevant_points])
-            
-            
-    odd_chan_matrix = np.delete(odd_chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
-    
-    avg_every_odd_channel = np.zeros(1000)
-    
-    for ii in range(192):
-        mean_across_channel = np.mean(odd_chan_matrix[ii:ii+10], axis=0)
-        avg_every_odd_channel = np.vstack([avg_every_odd_channel, mean_across_channel])
-        ii = ii+10
-        
-    avg_every_odd_channel = np.delete(avg_every_odd_channel, [0], axis=0) # remove 1st row, which is not crucial
-    
-    
-    # ALL EVEN CHANNELS
-    even_chan_matrix = np.zeros(1000)
-    
-    for chan in range(1,len(allchans.T)+1,2):
-        evenchannel = allchans[:,chan]
-        
-        for ii in range(len(trial)):
-            # relevant_points = channel[trigger[1].iloc[ii]-250:trigger[1].iloc[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
-            relevant_points = evenchannel[trial[ii]-250:trial[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
-            even_chan_matrix = np.vstack([even_chan_matrix, relevant_points])
+            relevant_points = channel[trial[ii]-250:trial[ii]+750]  # we look at 100 millisec before and 300 millisec after trigger onset
+            chan_matrix = np.vstack([chan_matrix, relevant_points])
 
             
-    even_chan_matrix = np.delete(even_chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
+    chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
     
-    avg_every_even_channel = np.zeros(1000)
+    avg_every_channel = np.zeros(1000)
     
-    for ii in range(192):
-        mean_across_channel = np.mean(even_chan_matrix[ii:ii+10], axis=0)
-        avg_every_even_channel = np.vstack([avg_every_even_channel, mean_across_channel])
+    for ii in range(384):
+        mean_across_channel = np.mean(chan_matrix[ii:ii+10], axis=0)
+        avg_every_channel = np.vstack([avg_every_channel, mean_across_channel])
         ii = ii+10
         
-    avg_every_even_channel = np.delete(avg_every_even_channel, [0], axis=0) # remove 1st row, which is not crucial
+    avg_every_channel = np.delete(avg_every_channel, [0], axis=0) # remove 1st row, which is not crucial
     
-    
-    # COMBINE ODD AND EVEN CHANNELS
-    avg_every_channel = np.concatenate((avg_every_odd_channel, avg_every_even_channel), axis=0)
+    avg_every_channel_df = pd.DataFrame(avg_every_channel, index=depths)
     
     # #%matplotlib qt
     
     # heatmap
-    fig, axs = plt.subplots(figsize=(5, 15))
+    fig, axs = plt.subplots(figsize=(15, 10))
     
     # axs = sns.heatmap(np.flip(avg_every_channel, 0), yticklabels = np.flip([range(384)], 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
-    sns.heatmap(avg_every_channel, cmap="crest", vmax=200, vmin=-200)
+    sns.heatmap(avg_every_channel_df, cmap="crest", vmax=200, vmin=-200)
     
     x_ticks = np.arange(0, 1200, 250)
     x_ticklabels = ([-100, 0, 100, 200, 300])
@@ -246,19 +219,23 @@ def plot_channels_per_tone(allchans, trial, freq, trigger_num, savehere):
     axs.set_xlabel('Time (in ms)')
     axs.set_title('Trigger frequency:' + str(freq) + ' Hz' )
     
-    y_ticks = np.arange(0, 384, 192)
-    y_ticklabels = (['odd channels','even channels'])
-    axs.set_yticks(y_ticks)
-    axs.set_yticklabels(y_ticklabels, rotation=90)
+    # # y_ticks = np.arange(0, 384, 20)
+    # y_ticklabels = (depths)
+    # # axs.set_yticks(y_ticks)
+    # axs.set_yticklabels(y_ticklabels)
+    axs.set_ylabel('Depth')
     
+    save_loc = str(savehere) + '/channels_per_tone'
+    if not os.path.exists(save_loc):     # if the required folder does not exist, create one
+        os.mkdir(save_loc)
     
-    plt.savefig(str(savehere) + '/trigger' + str(freq) + 'Hz_hm.png')
+    plt.savefig(str(save_loc) + '/trigger' + str(freq) + 'Hz_hm.png')
     plt.close()
     
     
     
-    
-
+# import necessities   
+import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
@@ -274,7 +251,12 @@ from spikeinterface.preprocessing import bandpass_filter, common_reference
     
 recording = load_recording()
 trigger_df, trigger, trigger_freq = load_trigger()
-    
+
+# get electrode depths to arrange the channels later 
+rec_probe = recording.get_probe().to_dataframe()
+depths = rec_probe.iloc[:,1]
+sorted_depths = depths.sort_values().reset_index(drop=True)
+  
 # steps before getting rid of artifacts
 chans = recording.get_traces()      # #samples-by-#channels
 
@@ -290,22 +272,32 @@ for ii in range(len(chans.T)):
 # remove top row and then transpose
 chans_upd = (np.delete(chans_upd, [0], axis=0)).T
 
+# get pandas dataframe to sort them
+chans_upd_df = pd.DataFrame(chans_upd.T)
+# add depth info from the probe
+chans_upd_df['depths'] = depths
+
+# sort all channels based on depth
+chans_upd_depth_df = chans_upd_df.sort_values(by=['depths']).reset_index(drop=True)
+chans_upd_depth_df = chans_upd_depth_df.drop(columns=['depths'])
+#convert back to numpy
+chans_upd_depth = chans_upd_depth_df.T.to_numpy()
 
 # plotting for each channel
 
 savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p2/p2_1_1/plots/')
 
-for c in range(len(chans_upd.T)):
+# for c in range(len(chans_upd.T)):
 # for c in range(384):
     
-     chan = chans_upd[:,c]
-     plot_tones_per_channel(chan, c+1, trigger, trigger_freq, savehere)
+#     chan = chans_upd[:,c]
+#     plot_tones_per_channel(chan, c+1, trigger, trigger_freq, savehere)
 
 
 for t in range(len(trigger_freq)):
     
     trigger_subset = trigger[trigger_df.iloc[:,0] == trigger_freq[t]].reset_index(drop=True)
-    plot_channels_per_tone(chans_upd, trigger_subset, trigger_freq[t], t+1, savehere)
+    plot_channels_per_tone(chans_upd_depth, trigger_subset, trigger_freq[t], t+1, savehere, sorted_depths)
 
 '''
 #plot out a channel to set criteria for artifact detection
