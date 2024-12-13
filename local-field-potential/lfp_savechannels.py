@@ -11,7 +11,7 @@ Then saved as csv files for further processing in Python/Matlab.
 def destination_dir():
     # folder where preprocessed data is to be saved
     
-    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/channels_preprocessed/"
+    destdir = "/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15"
     # destdir = Path('G:/Final_exps_spikes/preprocessed_data/Elfie/p2_test')
     if not os.path.exists(destdir):     # if the required folder does not exist, create one
         os.mkdir(destdir)
@@ -49,7 +49,9 @@ def split_chans(recording):
     
     Saves the split recording, i.e. split into individual channels
     '''
-    outputdir = destination_dir()
+    outputdir = destination_dir() + '/channels_preprocessed'
+    if not os.path.exists(outputdir):     # if the required folder does not exist, create one
+        os.mkdir(outputdir)
     
     length_of_rec = len(recording.get_channel_ids())
     channel_groups = np.repeat(range(0,length_of_rec),1)
@@ -82,6 +84,11 @@ from spikeinterface.preprocessing import bandpass_filter, common_reference
 
 # main body
 recording = load_recording()
+
+# save the probe information for this penetration
+savehere = destination_dir()
+rec_probe = recording.get_probe().to_dataframe()
+rec_probe.to_csv(str(savehere) + '/probe-info.csv', index=False)
 
 # save each channel amplitudes in a folder
 split_chans(recording)
