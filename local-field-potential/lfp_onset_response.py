@@ -16,11 +16,12 @@ def load_trigger():
 
     '''
     # read the saved trigger channel info
-    # file = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/trigger_onset_for_py.npy'
-    file = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/trigger_onset_for_py.npy')
+    file = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/trigger_onset_for_py.npy'
+    # file = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/trigger_onset_for_py.npy')
     triggers = pd.DataFrame(np.load(file))
     
     return triggers
+
 
 
 def load_channel(channel):
@@ -36,6 +37,7 @@ def load_channel(channel):
     
     return channel_csv
     
+
 
 def artifact_removal(channel, locs):
     '''
@@ -89,6 +91,18 @@ def artifact_detection(channel, ref_mean):
     return channel
 
 
+def identify_channel(filepath):
+    
+    folder = str(filepath)     
+
+    folder_name_loc = re.search(r"LFP[0-9]\w+", folder)
+    ind = folder_name_loc.span()
+    channelID = folder[ind[0]+3:ind[1]]        # get rid of the 'LFP' at the start of the channel ID name
+    
+    return int(channelID)
+
+
+
 
 def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
     
@@ -100,7 +114,8 @@ def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
     For tuning curve,  we look at 100 millisec (100*2.5=250) before and 300 millisec (300*2.5=750) after trigger onset
     
     '''
-    chan_matrix = np.zeros(1000)
+    chan_matrix = np.zeros(17500)       # for music data currently (12500 + 5000)
+    # chan_matrix = np.zeros(1000)       # for tc data currently (250 + 750)
     
     # for music
     dp_pre_onset = 5000
@@ -108,7 +123,9 @@ def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
 
     for ii in range(len(trigger)):
         # relevant_points = channel[trigger[1].iloc[ii]-250:trigger[1].iloc[ii]+750]
-        relevant_points = channel[trigger[ii]-dp_pre_onset:trigger[ii]+dp_post_onset]
+        relevant_start = trigger.iloc[ii] - dp_pre_onset
+        relevant_end = trigger.iloc[ii] + dp_post_onset
+        relevant_points = channel[relevant_start[0]:relevant_end[0]].T
         chan_matrix = np.vstack([chan_matrix, relevant_points])
     
     chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
@@ -128,36 +145,29 @@ import os
 import numpy as np
 import pandas as pd
 from pathlib import Path
-# import matplotlib.pyplot as plt
-# import seaborn as sns
+import re
 
 import spikeinterface.full as si
-from spikeinterface.preprocessing import bandpass_filter, common_reference
-
 
 
 # main body
-# recording = load_recording()
 trigger = load_trigger()
-# trigger_df, trigger, trigger_freq = load_trigger()
 
-# directory = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/channels_preprocessed/'
-directory = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/channels_preprocessed/')
+directory = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/channels_preprocessed/'
+# directory = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/channels_preprocessed/')
   
 # steps before getting rid of artifacts
-chan_counter = 1
 for chan in os.listdir(directory):
     filepath = str(directory) + '/' + chan
     channel = load_channel(filepath)      # #samples-by-1
+    chan_counter = identify_channel(filepath)       # identify current channel based on filepath
     
     # detect artifact and correct them for this channel
     ref_mean = np.mean(abs(channel))    
     channel_clean = artifact_detection(channel, ref_mean)
     
     # for each channel
-    savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/')
-    # savehere = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/'
+    # savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/')
+    savehere = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/'
 
-    channeldata_per_trial_onset(channel_clean, chan_counter, trigger, savehere)         # slicing error
-    chan_counter += 1
-
+    channeldata_per_trial_onset(channel_clean, chan_counter, trigger, savehere)
