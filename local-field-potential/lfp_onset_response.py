@@ -95,7 +95,7 @@ def identify_channel(filepath):
     
     folder = str(filepath)     
 
-    folder_name_loc = re.search(r"LFP[0-9]\w+", folder)
+    folder_name_loc = re.search(r"LFP[0-9]+", folder)
     ind = folder_name_loc.span()
     channelID = folder[ind[0]+3:ind[1]]        # get rid of the 'LFP' at the start of the channel ID name
     
@@ -109,17 +109,27 @@ def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
     '''
     NOTE: Sampling rate of LFP is 2.5kHz or 2500Hz
     For music data, inter-trigger-interval is ~60s 
-    Hence, we will look at 5s after trigger onset (5*2500=12500), and 2s before trigger onset (2*2500=5000)
+    Hence, we will look at 1s after trigger onset (1*2500=2500), and 0.5s before trigger onset (0.5*2500=1250)
     
     For tuning curve,  we look at 100 millisec (100*2.5=250) before and 300 millisec (300*2.5=750) after trigger onset
     
     '''
-    chan_matrix = np.zeros(17500)       # for music data currently (12500 + 5000)
-    # chan_matrix = np.zeros(1000)       # for tc data currently (250 + 750)
+    
+    save_loc = str(savehere) + '/onset_responses'
+    if not os.path.exists(save_loc):     # if the required folder does not exist, create one
+        os.mkdir(save_loc)
+    
+    # also check if the file for this channel already exists
+    if os.path.exists(str(save_loc) + '/channel' + str(channel_num) + '_alltones_allamps.csv'):
+        print("File exists! Moving on to next channel...")
+        return
+
+    
+    chan_matrix = np.zeros(3750)       # for music data currently
     
     # for music
-    dp_pre_onset = 5000
-    dp_post_onset = 12500
+    dp_pre_onset = 1250
+    dp_post_onset = 2500
 
     for ii in range(len(trigger)):
         # relevant_points = channel[trigger[1].iloc[ii]-250:trigger[1].iloc[ii]+750]
@@ -130,13 +140,9 @@ def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
     
     chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
     
-    save_loc = str(savehere) + '/onset_responses'
-    if not os.path.exists(save_loc):     # if the required folder does not exist, create one
-        os.mkdir(save_loc)
-    
     # to save this matrix
     channel_df = pd.DataFrame(chan_matrix)
-    channel_df.to_csv(str(save_loc) + '/channel' + str(channel_num) + '_alltones_allamps.csv')
+    channel_df.to_csv(str(save_loc) + '/channel' + str(channel_num) + '_alltones_allamps.csv', header=False, index=False)
 
 
 
@@ -147,7 +153,8 @@ import pandas as pd
 from pathlib import Path
 import re
 
-import spikeinterface.full as si
+from warnings import simplefilter
+simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 
 
 # main body
@@ -171,3 +178,8 @@ for chan in os.listdir(directory):
     savehere = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/'
 
     channeldata_per_trial_onset(channel_clean, chan_counter, trigger, savehere)
+
+    del channel
+    del channel_clean
+
+
