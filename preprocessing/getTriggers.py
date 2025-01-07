@@ -50,20 +50,29 @@ def name_folder(path):
 
 def trigger_onset(trigger, savehere):
     # 
-    trigger_diff = np.diff(trigger, n=1)   # trigger[i+1] - trigger[i] 
+    trigger_diff = np.diff(trigger, n=1)   # trigger_clean[i+1] - trigger_clean[i] 
     
     # find indices where the values are 1 after the subtraction
-    trigger_onset_loc = np.where(trigger_diff == 1)       # generates a tuple
+    trigger_onset_loc = np.where(trigger_diff == 1)[0]
+    trigger_offset_loc = np.where(trigger_diff == -1)[0]
+    
+    # check for possible artifacts
+    trigger_off_on_diff = trigger_offset_loc - trigger_onset_loc
+    threshold = 20
+    
+    trigger_onset_loc_clean = trigger_onset_loc[trigger_off_on_diff > threshold]
+    
     
     # separate for further python-based and matlab-based analysis
-    trigger_ind_for_py = trigger_onset_loc[0] + 1
-    trigger_ind_for_matlab = trigger_onset_loc[0] + 2        # NOTE: In Matlab, index starts from 1 (not 0)
+    trigger_ind_for_py = trigger_onset_loc_clean + 1
+    trigger_ind_for_matlab = trigger_onset_loc_clean + 2        # NOTE: In Matlab, index starts from 1 (not 0)
     
     # save the locations of the trigger onsets
     np.save(os.path.join(savehere, 'ss_trigger_onset_for_py'), trigger_ind_for_py)
     np.savetxt(os.path.join(savehere, 'ss_trigger_onset_for_matlab.csv'), trigger_ind_for_matlab)
     #np.save(os.path.join(savehere, 'trigger_onset_for_matlab'), trigger_ind_for_matlab)
     print('Corresponding trigger onset locations saved...')
+    
     
     
 
