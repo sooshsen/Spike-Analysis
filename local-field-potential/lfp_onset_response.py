@@ -33,7 +33,8 @@ def load_channel(channel):
     Pandas series of amplitudes for one channel
 
     '''
-    channel_csv = pd.read_csv(channel, header=None)        #NOTE: This will be saved as a column vector, i.e. #sample-by-1
+    # channel_csv = pd.read_csv(channel, header=None)        #NOTE: This will be saved as a column vector, i.e. #sample-by-1
+    channel_csv = np.loadtxt(channel, delimiter=",")        # Hoping that this will be memory efficient
     
     return channel_csv
     
@@ -63,8 +64,8 @@ def artifact_removal(channel, locs):
         if endind >= len(channel)-1:
             endind = len(channel)-1
             
-        ind = np.arange(startind, endind, dtype=int)
-        channel[ind] = np.nan
+        # ind = np.arange(startind, endind, dtype=int)
+        channel[startind : endind] = np.nan
         
           
     return channel
@@ -85,8 +86,10 @@ def artifact_detection(channel, ref_mean):
 
     all_artifact_locs = np.concatenate((p_artifact_locs, n_artifact_locs))
     all_artifact_locs = np.unique(all_artifact_locs)
+    # change dtype
+    locs = np.int32(all_artifact_locs)
     
-    channel = artifact_removal(channel, all_artifact_locs)  
+    channel = artifact_removal(channel, locs)  
     
     return channel
 
@@ -135,7 +138,7 @@ def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
         # relevant_points = channel[trigger[1].iloc[ii]-250:trigger[1].iloc[ii]+750]
         relevant_start = trigger.iloc[ii] - dp_pre_onset
         relevant_end = trigger.iloc[ii] + dp_post_onset
-        relevant_points = channel[relevant_start[0]:relevant_end[0]].T
+        relevant_points = channel[relevant_start[0]:relevant_end[0]]
         chan_matrix = np.vstack([chan_matrix, relevant_points])
     
     chan_matrix = np.delete(chan_matrix, [0], axis=0) # remove 1st row, which is not crucial
@@ -143,6 +146,8 @@ def channeldata_per_trial_onset(channel, channel_num, trigger, savehere):
     # to save this matrix
     channel_df = pd.DataFrame(chan_matrix)
     channel_df.to_csv(str(save_loc) + '/channel' + str(channel_num) + '_alltones_allamps.csv', header=False, index=False)
+
+    del chan_matrix
 
 
 
@@ -172,14 +177,15 @@ for chan in os.listdir(directory):
     # detect artifact and correct them for this channel
     ref_mean = np.mean(abs(channel))    
     channel_clean = artifact_detection(channel, ref_mean)
-    
+
+    del channel
+
     # for each channel
     # savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/')
     savehere = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/'
 
     channeldata_per_trial_onset(channel_clean, chan_counter, trigger, savehere)
 
-    del channel
     del channel_clean
 
 
