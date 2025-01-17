@@ -64,61 +64,44 @@ def plot_tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     
     avg_every_tone = np.delete(avg_every_tone, [0], axis=0) # remove 1st row, which is not crucial
     
-    avg_every_tone_df = pd.DataFrame(avg_every_tone)        
+    # avg all trials for all tones
+    avg_all_tones = np.mean(chan_matrix, axis=0)
     
+    all_data = np.vstack([avg_all_tones, avg_every_tone])
+    all_data_df = pd.DataFrame(all_data)
+    
+
     # #%matplotlib qt
     
-    
-    x = range(3750)
-    #fig, axs = plt.subplots(1, 2, gridspec_kw={'width_ratios': [1, 3]})
-    fig = plt.plot()
-    # fig.tight_layout()
-    fig.set_figheight(15)
-    fig.set_figwidth(20)
-    
+    fig, ax = plt.subplots()
+
     # plot all avg amplitudes per channel
-    for ii in range(9):
-        (ii*500 + avg_every_tone_df.T.iloc[:,ii]).plot()
+    ax.plot(all_data_df.T.iloc[:,0], color='DarkRed', linewidth=3)
     
+    for ii in range(1,10):
+        ax.plot(all_data_df.T.iloc[:,ii] + ii*500, color='black')
     
+    # identify onset point
+    ax.axvline(x = 1251, color = 'r', linestyle = '--')
+
+    # set ticks
+    ax.set_xticks(np.arange(0,4500,1250), ['-500','0','500','1000'])
+    ax.set_yticks(np.arange(0, 5000, 500), ['avg','1','2','3','4','5','6','7','8','9'])
     
-    # x_ticks = np.arange(0, 1200, 250)
-    # x_ticklabels = ([-100, 0, 100, 200, 300])
-    # axs[0].set_xticks(x_ticks)
-    # axs[0].set_xticklabels(x_ticklabels)
-    
-    # y_ticks = np.arange(0, 4000, 100)
-    # # y_ticklabels = (trigger_freq)
-    # axs[0].set_yticks(y_ticks)
-    # # axs[0].set_yticklabels(y_ticklabels)
-    
-    # axs[0].set_ylim(-75, 4000)
-    
-    axs[0].set_xlabel('Time (in ms)')
-    axs[0].set_ylabel('Frequency (in Hz)')
-    # axs[0].set_title('Average amplitude per frequency')
-    
-    
-    # # heatmap
-    # # fig = plt.subplots(figsize=(5, 10), dpi=80)
-    # x_ticks = np.arange(0, 1200, 250)
-    # x_ticklabels = ([-100, 0, 100, 200, 300])
-    
-    # # axs[1] = sns.heatmap(np.flip(avg_every_tone, 0), yticklabels = np.flip(trigger_freq, 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
-    # axs[1] = sns.heatmap(np.flip(avg_every_tone, 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
-    # # axs[1].set_xticks(x_ticks)
-    # # axs[1].set_xticklabels(x_ticklabels, rotation=0)
-    # axs[1].axvline(x = 251, color = 'w', linestyle='dashed')
-    # axs[1].set_xlabel('Time (in ms)')
-    # # axs[1].set_title('Average amplitude per frequency - heatmap')
-    
-    
+    # label axes
+    ax.set_xlabel('Time (in ms)')
+    ax.set_ylabel('Music piece')
+    ax.set_title('LFP : Channel ' + str(channel_num))
+
+    # save the plots
     save_loc = str(savehere) + '/tones_per_channel'
     if not os.path.exists(save_loc):     # if the required folder does not exist, create one
         os.mkdir(save_loc)
     
     plt.savefig(str(save_loc) + '/channel' + str(channel_num) + '.png')
     plt.close()
+    
+    return avg_all_tones
     
 
 '''
@@ -226,10 +209,15 @@ trigger = load_trigger()
 
 directory = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/onset_responses/')
 
+avg_all_tones = np.zeros(3750)      # this is currently hard-coded, need to be changed later
+channel_order = []
+
 for chan in os.listdir(directory):
     filepath = str(directory) + '/' + chan
     onset_mat = load_onset_response(filepath)
     channel_num = identify_channel(filepath)       # identify current channel based on filepath
+    
+    channel_order.append(channel_num)
     
     # for each channel
     savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/plots/')
@@ -237,7 +225,11 @@ for chan in os.listdir(directory):
         os.mkdir(savehere)
     
     # plot every tone per channel
-    plot_tones_per_channel(onset_mat, channel_num, trigger, savehere)
+    tones_per_channel = plot_tones_per_channel(onset_mat, channel_num, trigger, savehere)
+    avg_all_tones = np.vstack([avg_all_tones, tones_per_channel])
+    
+
+avg_all_tones = np.delete(avg_all_tones, [0], axis=0) # remove 1st row, which is not crucial
     
     
 
