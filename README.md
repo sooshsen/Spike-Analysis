@@ -13,7 +13,8 @@ Required external program installations: Spike Interface (https://github.com/Spi
 3. SINGLE-UNIT ANALYSIS
    Pipeline for raw open-ephys recording data - to obtain spike onset timings for each experiment (within a penetration)
    
-
+4. LOCAL-FIELD-POTENTIAL
+   Currently the code supports a specific dataset - to be generalized in future for other use
 
 ARCHIVE:
 1. Generate metadata per experiment (mean, variance, #ofdatasamples) - getStats.py
