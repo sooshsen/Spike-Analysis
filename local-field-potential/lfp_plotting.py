@@ -104,7 +104,7 @@ def plot_tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     return avg_all_tones
 
 
-def plot_channels_per_tone(avg_every_channel, depths, savehere):
+def plot_channels_for_music(avg_every_channel, depths, savehere):
     
     save_loc = str(savehere) + '/channels_per_tone'
     if not os.path.exists(save_loc):     # if the required folder does not exist, create one
@@ -162,7 +162,7 @@ def plot_channels_per_tone(avg_every_channel, depths, savehere):
 
 
 '''
-# THIS IS FOR DATA EXCEPT MUSIC
+# THIS IS FOR DATA EXCEPT MUSIC - this needs work!
 def plot_channels_per_tone(allchans, trial, freq, trigger_num, savehere, depths):
     
     save_loc = str(savehere) + '/channels_per_tone'
@@ -314,7 +314,7 @@ savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/plots/')
 if not os.path.exists(savehere):     # if the required folder does not exist, create one
     os.mkdir(savehere)
     
-plot_channels_per_tone(updated_avg_all_tones, np.array(avg_all_tones_df['probe_locs']), savehere)
+plot_channels_for_music(updated_avg_all_tones, np.array(avg_all_tones_df['probe_locs']), savehere)
 
     
 
