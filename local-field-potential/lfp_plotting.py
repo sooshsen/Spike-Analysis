@@ -102,9 +102,67 @@ def plot_tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     plt.close()
     
     return avg_all_tones
+
+
+def plot_channels_per_tone(avg_every_channel, depths, savehere):
+    
+    save_loc = str(savehere) + '/channels_per_tone'
+    if not os.path.exists(save_loc):     # if the required folder does not exist, create one
+        os.mkdir(save_loc)
+    # arraged as: chan1 10 trials, chan2 10 trials, and so on ...
+
+    avg_every_channel_df = pd.DataFrame(avg_every_channel, index=depths)
+    
+    # #%matplotlib qt
+    
+    # heatmap
+    fig, axs = plt.subplots(figsize=(15, 30))
+    
+    # axs.pcolormesh(avg_every_channel_df, cmap='RdBu_r')
+    # axs = sns.heatmap(np.flip(avg_every_channel, 0), yticklabels = np.flip([range(384)], 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
+    sns.heatmap(avg_every_channel_df, cmap="coolwarm", vmax=200, vmin=-200)
+    axs.invert_yaxis()
+    
+    # identify onset point
+    axs.axvline(x = 1251, color = 'w', linestyle = '--', linewidth = 2)
+    
+    # set ticks
+    axs.set_xticks(np.arange(0,4500,1250), ['-500','0','500','1000'], rotation=0)
+    
+    axs.set_xlabel('Time (in ms)')
+    axs.set_ylabel('Depth')
+    axs.set_title('All channels - All music pieces')
+    
+    plt.savefig(str(save_loc) + '/allchans_allmusicpiece_hm.png')
+    plt.close()
     
 
+    # waveform
+    fig2, axs2 = plt.subplots(figsize=(20, 15))
+    
+    # plot all avg amplitudes per channel
+    for ii in range(5, 384, 9):
+        axs2.plot(avg_every_channel[ii] + ii*10, 'k')
+    
+    axs2.axvline(x = 1251, color = 'r', linestyle='dashed')
+    
+    # set ticks
+    axs2.set_xticks(np.arange(0,4500,1250), ['-500','0','500','1000'])
+    axs2.set_yticks(np.arange(0, 3840, 90), depths[5::9])
+    
+    # axs2.set_ylim(-75, 4000)
+    
+    axs2.set_xlabel('Time (in ms)')
+    axs2.set_ylabel('Depth')
+    
+    axs2.set_title('All channels - All music pieces' )
+    plt.savefig(str(save_loc) + 'allchans_allmusicpiece_wf.png')
+    plt.close()
+    
+
+
 '''
+# THIS IS FOR DATA EXCEPT MUSIC
 def plot_channels_per_tone(allchans, trial, freq, trigger_num, savehere, depths):
     
     save_loc = str(savehere) + '/channels_per_tone'
@@ -230,6 +288,33 @@ for chan in os.listdir(directory):
     
 
 avg_all_tones = np.delete(avg_all_tones, [0], axis=0) # remove 1st row, which is not crucial
+
+# fix the data
+avg_all_tones_df = pd.DataFrame(avg_all_tones)
+avg_all_tones_df['channelnum'] = channel_order
+
+# sort the data based on channel numbers
+avg_all_tones_df = avg_all_tones_df.sort_values(by=['channelnum'], ignore_index=True)
+
+# get probe info
+probe_locs = load_probe()
+
+# add probe info to rest of the data
+avg_all_tones_df['probe_locs'] = probe_locs
+
+# sort the data based on depth of channels
+avg_all_tones_df = avg_all_tones_df.sort_values(by=['probe_locs'], ignore_index=True)
+
+updated_avg_all_tones = np.array(avg_all_tones_df.drop(['channelnum', 'probe_locs'], axis=1))
+
+
+
+## 2nd plot
+savehere = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/plots/')
+if not os.path.exists(savehere):     # if the required folder does not exist, create one
+    os.mkdir(savehere)
     
+plot_channels_per_tone(updated_avg_all_tones, np.array(avg_all_tones_df['probe_locs']), savehere)
+
     
 
