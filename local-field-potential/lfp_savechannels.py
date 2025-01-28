@@ -28,7 +28,7 @@ def load_recording():
                                     stream_id="1", 
                                     block_index=0)   # for music data
     recordinglfp_f = bandpass_filter(recording=raw_rec_lfp, 
-                                     freq_min=3, 
+                                     freq_min=1,     # avoids unexplained early response problem before actual onset
                                      freq_max=250)
     # recordinglfp_r = resample(recording=recordinglfp_f, resample_rate = 1000)
     recordinglfp_cmr = common_reference(recording=recordinglfp_f, 
