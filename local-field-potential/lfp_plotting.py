@@ -120,7 +120,7 @@ def plot_channels_for_music(avg_every_channel, depths, savehere):
     
     # axs.pcolormesh(avg_every_channel_df, cmap='RdBu_r')
     # axs = sns.heatmap(np.flip(avg_every_channel, 0), yticklabels = np.flip([range(384)], 0), cmap="crest", vmax=200, vmin=-200)     # reorder the array for plotting purpose
-    sns.heatmap(avg_every_channel_df, cmap="coolwarm", vmax=200, vmin=-200)
+    sns.heatmap(avg_every_channel_df, cmap="coolwarm", vmax=400, vmin=-400)
     axs.invert_yaxis()
     
     # identify onset point
