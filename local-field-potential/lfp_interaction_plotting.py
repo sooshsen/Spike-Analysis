@@ -5,6 +5,7 @@ Created on Tue Jan 28 15:00:59 2025
 @author: ssenapat
 
 evaluate correlation
+MIGHT BE USEFUL LATER !!! - Not in use currently
 """
 
 # read one channel at a time and separate it into indvidual clusters
