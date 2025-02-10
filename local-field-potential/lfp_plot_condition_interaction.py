@@ -64,6 +64,7 @@ def plot_tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     
     
     # split the rows based on condition - THIS IS MANUALLY ENCODED AT THE MOMENT!
+    # for each condition, order of frequencies is 66, 75 and 85 Hz respectively
     # condition 1
     avg_every_tone_original_ord = avg_every_tone[0]
     avg_every_tone_original_ord = np.vstack([avg_every_tone_original_ord, avg_every_tone[3]])
