@@ -85,12 +85,35 @@ def tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     return downsampled_chan_matrix
 
 
+def two_way_anova(window_matrix):
+    
+    # based on behavioral experiement paradigm
+    condition_order = ['original', 'global_reversed','original','original','global_reversed','local_reversed','local_reversed','global_reversed','local_reversed']
+    condition_speed = [66,75,85,75,85,75,66,66,85]
+    
+    # combine all information in a dataframe
+    data_df = pd.DataFrame(window_matrix)
+    data_df.rename(columns={0 : 'evoked_response'}, inplace=True)
+    
+    # add two factors
+    data_df['order'] = np.repeat(condition_order, 10)
+    data_df['speed'] = np.repeat(condition_speed, 10)
+    
+    model = ols('evoked_response ~ C(order) + C(speed) + C(order):C(speed)', data=data_df).fit() 
+    result = sm.stats.anova_lm(model, type=2)
+    
+    print(result)
+
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
 from pathlib import Path
 import re
+
+import statsmodels.api as sm 
+from statsmodels.formula.api import ols 
     
 
 #trigger = load_trigger()
@@ -114,3 +137,5 @@ for chan in os.listdir(directory):
     modified_data = downsample_channel(onset_mat, channel_num, savehere)
     
     # add function to perform 2-way ANOVA
+    for window in range(len(modified_matrix.T)):      # this should be 12
+        two_way_anova(modified_matrix[:,window])
