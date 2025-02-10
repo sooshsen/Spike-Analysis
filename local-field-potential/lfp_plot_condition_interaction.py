@@ -53,18 +53,19 @@ def identify_channel(filepath):
 def plot_tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     
     ### USE NUMPY ARRAY SPLIT() HERE
-    avg_every_tone = np.zeros(3750)
+    avg_every_tone = np.zeros(2500)     # only looking at first 2500 datapoints i.e. 0.5s before and 0.5s after the trigger onset
     
+    chan_matrix_selected = chan_matrix.iloc[:,0:2500]
     for ii in range(9):
-        mean_across_tone = np.mean(chan_matrix[ii:ii+10], axis=0)
+        mean_across_tone = np.mean(chan_matrix_selected[ii:ii+10], axis=0)
         avg_every_tone = np.vstack([avg_every_tone, mean_across_tone])
         ii = ii+10      # each stimulus has 10 trials
     
     avg_every_tone = np.delete(avg_every_tone, [0], axis=0) # remove 1st row, which is not crucial
     
-    
+    # FACTOR 1 - ORDER OF PRESENTED TONE
     # split the rows based on condition - THIS IS MANUALLY ENCODED AT THE MOMENT!
-    # for each condition, order of frequencies is 66, 75 and 85 Hz respectively
+    # for each condition, order of frequencies is 66,75 and 85 Hz respectively
     # condition 1
     avg_every_tone_original_ord = avg_every_tone[0]
     avg_every_tone_original_ord = np.vstack([avg_every_tone_original_ord, avg_every_tone[3]])
@@ -81,33 +82,81 @@ def plot_tones_per_channel(chan_matrix, channel_num, trigger, savehere):
     avg_every_tone_globalrev_ord = np.vstack([avg_every_tone_globalrev_ord, avg_every_tone[4]])
     
     
+    # FACTOR 2 - SPEED OF PRESENTED TONE
+    # split the rows based on condition - THIS IS MANUALLY ENCODED AT THE MOMENT!
+    # for each condition, order : Original, Local reversed, and, Global reversed respectively
+    # condition 1
+    avg_every_tone_66 = avg_every_tone[0]
+    avg_every_tone_66 = np.vstack([avg_every_tone_66, avg_every_tone[6]])
+    avg_every_tone_66 = np.vstack([avg_every_tone_66, avg_every_tone[7]])
+    
+    # condition 2
+    avg_every_tone_75 = avg_every_tone[3]
+    avg_every_tone_75 = np.vstack([avg_every_tone_75, avg_every_tone[5]])
+    avg_every_tone_75 = np.vstack([avg_every_tone_75, avg_every_tone[1]])
+    
+    # condition 3
+    avg_every_tone_85 = avg_every_tone[2]
+    avg_every_tone_85 = np.vstack([avg_every_tone_85, avg_every_tone[8]])
+    avg_every_tone_85 = np.vstack([avg_every_tone_85, avg_every_tone[4]])
+    
     # plots 
-    fig, ax = plt.subplots(nrows=3, ncols=1, sharex=True, figsize=(20, 10))
+    fig, ax = plt.subplots(nrows=3, ncols=2, sharex=True, figsize=(20, 10))
     
+    # factor 1
     for ii in range(0,3):
-        ax[0].plot(avg_every_tone_original_ord[ii])
+        ax[0,0].plot(avg_every_tone_original_ord[ii])
         
     for ii in range(0,3):
-        ax[1].plot(avg_every_tone_localrev_ord[ii])
+        ax[1,0].plot(avg_every_tone_localrev_ord[ii])
         
     for ii in range(0,3):
-        ax[2].plot(avg_every_tone_globalrev_ord[ii])
-    
+        ax[2,0].plot(avg_every_tone_globalrev_ord[ii])
+        
     for axisnum in range(0,3):
-        ax[axisnum].axvline(x = 1251, color = 'r', linestyle = '--')
-        ax[axisnum].set_xticks(np.arange(0,4500,1250), ['-500','0','500','1000'])
-        ax[axisnum].set_xlabel('Time (in ms)')
-        ax[axisnum].legend(['66 Hz', '75 Hz', '85 Hz'])
-        ax[axisnum].set_ylim(bottom=-800, top=800)
-
-    ax[0].set_ylabel('Original pieces')
-    ax[1].set_ylabel('Locally reversed pieces')
-    ax[2].set_ylabel('Globally reversed pieces')
+        ax[axisnum,0].axvline(x = 1251, color = 'r', linestyle = '--')
+        #ax[axisnum,0].set_xticks(np.arange(0,4500,1250), ['-500','0','500','1000'])
+        ax[axisnum,0].set_xticks(np.arange(0,2500,250), ['-500','-400','-300','-200','-100','0','100','200','300','400'])
+        ax[axisnum,0].legend(['66 Hz', '75 Hz', '85 Hz'])
+        ax[axisnum,0].set_ylim(bottom=-750, top=750)
+        ax[axisnum,0].grid(axis='both', color='0.95')
+        
+    ax[0,0].set_ylabel('Original pieces')
+    ax[1,0].set_ylabel('Locally reversed pieces')
+    ax[2,0].set_ylabel('Globally reversed pieces')
+    ax[2,0].set_xlabel('Time (in ms)')
     
-    ax[0].set_title('LFP : Channel ' + str(channel_num))
+    
+        
+    # factor 2
+    for ii in range(0,3):
+        ax[0,1].plot(avg_every_tone_66[ii])
+        
+    for ii in range(0,3):
+        ax[1,1].plot(avg_every_tone_75[ii])
+        
+    for ii in range(0,3):
+        ax[2,1].plot(avg_every_tone_85[ii])
+        
+    for axisnum in range(0,3):
+        ax[axisnum,1].axvline(x = 1251, color = 'r', linestyle = '--')
+        #ax[axisnum,1].set_xticks(np.arange(0,4500,1250), ['-500','0','500','1000'])
+        ax[axisnum,1].set_xticks(np.arange(0,2500,250), ['-500','-400','-300','-200','-100','0','100','200','300','400'])
+        ax[axisnum,1].legend(['Original', 'Locally reversed', 'Globally reversed'])
+        ax[axisnum,1].set_ylim(bottom=-750, top=750)
+        ax[axisnum,1].grid(axis='both', color='0.95')
+        
+        
+    ax[0,1].set_ylabel('66 Hz')
+    ax[1,1].set_ylabel('75 Hz')
+    ax[2,1].set_ylabel('85 Hz')
+    ax[2,1].set_xlabel('Time (in ms)')
+    
+    fig.suptitle('LFP : Channel ' + str(channel_num), fontsize=16)
+    
     
     # save the plots
-    save_loc = str(savehere) + '/tones_per_channel_CONDITION_BASED'
+    save_loc = str(savehere) + '/tones_per_channel_factor based'
     if not os.path.exists(save_loc):     # if the required folder does not exist, create one
         os.mkdir(save_loc)
     
