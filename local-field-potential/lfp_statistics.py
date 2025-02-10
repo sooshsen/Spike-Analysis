@@ -81,7 +81,8 @@ def tones_per_channel(chan_matrix, channel_num, trigger, savehere):
         
     downsampled_chan_matrix_df = pd.DataFrame(downsampled_chan_matrix)
     downsampled_chan_matrix_df.to_csv(str(save_loc) + '/channel' + str(channel_num) + '_downsampled.csv', header=False, index=False)
-    
+
+    return downsampled_chan_matrix
 
 
 import numpy as np
@@ -92,12 +93,11 @@ from pathlib import Path
 import re
     
 
-trigger = load_trigger()
+#trigger = load_trigger()
    
 directory = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/onset_responses/')
 
 channel_order = []
-
 for chan in os.listdir(directory):
     filepath = str(directory) + '/' + chan
     onset_mat = load_onset_response(filepath)
@@ -110,6 +110,7 @@ for chan in os.listdir(directory):
     if not os.path.exists(savehere):     # if the required folder does not exist, create one
         os.mkdir(savehere)
     
-    # plot every tone per channel
-    # tones_per_channel = plot_tones_per_channel(onset_mat, channel_num, trigger, savehere)
-    tones_per_channel(onset_mat, channel_num, trigger, savehere)
+    # every tone per channel
+    modified_data = downsample_channel(onset_mat, channel_num, savehere)
+    
+    # add function to perform 2-way ANOVA
