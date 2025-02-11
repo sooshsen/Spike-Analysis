@@ -7,23 +7,6 @@ Created on Mon Feb 10 17:07:26 2025
 
 # read one channel at a time and separate it into indvidual clusters
 
-def load_trigger():
-    '''
-    Returns
-    -------
-    sorted_trigger_loc : TYPE
-        Generates trigger information for music pieces
-
-    '''
-    # read the saved trigger channel info
-    # file = '/home/ssenapat/groups/PrimNeu/Final_exps_spikes/LFP/Elfie/p1/p1_15/trigger_onset_for_py.npy'
-    file = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/trigger_onset_for_py.npy')
-    triggers = pd.DataFrame(np.load(file))
-    
-    return triggers
-
-
-
 def load_onset_response(file):
     '''
     Returns
@@ -51,7 +34,7 @@ def identify_channel(filepath):
 
 
 
-def tones_per_channel(chan_matrix, channel_num, trigger, savehere):
+def downsample_channel(chan_matrix, channel_num, trigger, savehere):
     
     ### 
     save_loc = str(savehere) + '/data_for_statistics'
@@ -102,7 +85,9 @@ def two_way_anova(window_matrix):
     model = ols('evoked_response ~ C(order) + C(speed) + C(order):C(speed)', data=data_df).fit() 
     result = sm.stats.anova_lm(model, type=2)
     
-    print(result)
+    #print(result)
+
+    return result
 
 
 import numpy as np
@@ -116,7 +101,6 @@ import statsmodels.api as sm
 from statsmodels.formula.api import ols 
     
 
-#trigger = load_trigger()
    
 directory = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/onset_responses/')
 
@@ -138,4 +122,4 @@ for chan in os.listdir(directory):
     
     # add function to perform 2-way ANOVA
     for window in range(len(modified_matrix.T)):      # this should be 12
-        two_way_anova(modified_matrix[:,window])
+        result = two_way_anova(modified_matrix[:,window])
