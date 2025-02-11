@@ -78,7 +78,7 @@ def interaction_effect(pvals):
     return p_interaction[p_interaction < 0.05].index.values
 '''    
 
-def ttest_by_order(data):
+def ttest_orderXspeed(data):
     
     orders = data['order'].unique()
     pval_order_pairwisespeed = {}
@@ -102,7 +102,7 @@ def ttest_by_order(data):
         
         
 
-def ttest_by_speed(data):
+def ttest_speedXorder(data):
     
     speeds = data['speed'].unique()
     pval_speed_pairwiseorder = {}
@@ -110,18 +110,36 @@ def ttest_by_speed(data):
     for s in speeds:
         subset_d = data[data['speed'] == s]
         subset_d_o1 = subset_d[subset_d['order'] == 'original']['evoked_response'].reset_index(drop=True)
-        subset_d_o2 = subset_d[subset_d['order'] == 'local_reversed']['evoked_response'].reset_index(drop=True)
-        subset_d_o3 = subset_d[subset_d['order'] == 'global_reversed']['evoked_response'].reset_index(drop=True)
+        subset_d_o2 = subset_d[subset_d['order'] == 'global_reversed']['evoked_response'].reset_index(drop=True)
+        subset_d_o3 = subset_d[subset_d['order'] == 'local_reversed']['evoked_response'].reset_index(drop=True)
         
         # perform ttest
         pval_12 = stats.ttest_rel(subset_d_o1, subset_d_o2).pvalue
         pval_13 = stats.ttest_rel(subset_d_o1, subset_d_o3).pvalue
         pval_23 = stats.ttest_rel(subset_d_o2, subset_d_o3).pvalue
         
-        pval_speed_pairwiseorder[s] = []
-        pval_speed_pairwiseorder[s].append([pval_12,pval_13,pval_23])
+        pval_speed_pairwiseorder[str(s)] = []
+        pval_speed_pairwiseorder[str(s)].append([pval_12,pval_13,pval_23])
+
         
     return pval_speed_pairwiseorder
+
+
+def ttest_maineff(data):
+    # col1 will be evoked potentials, col2 is the effect
+    
+    effect = data.iloc[:,-1].unique()       # these should be 3 (for both effect each)
+    
+    subset_1 = data[data.iloc[:,-1] == effect[0]]['evoked_response'].reset_index(drop=True)      # original, 66
+    subset_2 = data[data.iloc[:,-1] == effect[1]]['evoked_response'].reset_index(drop=True)      # global_reversed, 75
+    subset_3 = data[data.iloc[:,-1] == effect[2]]['evoked_response'].reset_index(drop=True)      # local_reversed, 85
+    
+    # perform ttest
+    pval_12 = stats.ttest_rel(subset_1, subset_2).pvalue
+    pval_13 = stats.ttest_rel(subset_1, subset_3).pvalue
+    pval_23 = stats.ttest_rel(subset_2, subset_3).pvalue
+    
+    return [pval_12, pval_13, pval_23]
     
     
 
@@ -139,13 +157,21 @@ def sample_prep(window_matrix):
     data_df['order'] = np.repeat(condition_order, 10)
     data_df['speed'] = np.repeat(condition_speed, 10)
     
-    # based on order
-    p_by_order = ttest_by_order(data_df)
+    ## INTERACTION EFFECT CONSIDERED
+    # based on orderXspeed
+    p_orderXspeed = ttest_orderXspeed(data_df)
+    # based on speedXorder
+    p_speedXorder = ttest_speedXorder(data_df)
     
-    # based on speed
-    p_by_speed = ttest_by_speed(data_df)
+    ## ONLY MAIN EFFECT CONSIDERED
+    # main effect - order
+    p_main_order = ttest_maineff(data_df[['evoked_response', 'order']])
+    # main effect - speed
+    p_main_speed = ttest_maineff(data_df[['evoked_response', 'speed']])
     
-    return p_by_order, p_by_speed
+    
+    return p_orderXspeed, p_speedXorder, p_main_order, p_main_speed
+
 
 
 def with_interaction_effect(data, channel_num, savehere):
@@ -157,32 +183,68 @@ def with_interaction_effect(data, channel_num, savehere):
     significance_by_order = {}
     significance_by_speed = {}
     
+    significance_combined = {}
+    
     for window in range(len(data.T)):      # this should be 12
         # print('Window '+ str(window+1))
         windowname = 'timewindow_' + str(window+1)
-        pvals_from_order, pvals_from_speed = sample_prep(data[:,window])
+        pvals_orderXspeed, pvals_speedXorder, p_main_order, p_main_speed = sample_prep(data[:,window])
         
         significance_by_order[windowname] = []
-        significance_by_order[windowname].append(pvals_from_order)
+        significance_by_order[windowname].append(pvals_orderXspeed)
         
         significance_by_speed[windowname] = []
-        significance_by_speed[windowname].append(pvals_from_speed)
+        significance_by_speed[windowname].append(pvals_speedXorder)
+    
+    significance_combined['orderXspeed'] = significance_by_order
+    significance_combined['speedXorder'] = significance_by_speed
     
     
     # save to pickle
-    destination_file_1 = str(save_loc) + '/channel' + str(channel_num) + '_order_interaction.pkl'
-    with open(destination_file_1, 'wb') as fp:
-        pickle.dump(significance_by_order, fp)
-        print('dictionary saved successfully to file')
-        fp.close()
-      
-        
-    destination_file_2 = str(save_loc) + '/channel' + str(channel_num) + '_speed_interaction.pkl'
-    with open(destination_file_2, 'wb') as fp:
-        pickle.dump(significance_by_speed, fp)
+    destination_file = str(save_loc) + '/channel' + str(channel_num) + '_interaction.pkl'
+    with open(destination_file, 'wb') as fp:
+        pickle.dump(significance_combined, fp)
         print('dictionary saved successfully to file')
         fp.close()
     
+    return significance_combined
+
+
+
+def without_interaction_effect(data, channel_num, savehere):
+    
+    save_loc = str(savehere) + '/significance_tests'
+    if not os.path.exists(save_loc):     # if the required folder does not exist, create one
+        os.mkdir(save_loc)
+    
+    significance_by_order = {}
+    significance_by_speed = {}
+    
+    significance_combined = {}
+    
+    for window in range(len(data.T)):      # this should be 12
+        # print('Window '+ str(window+1))
+        windowname = 'timewindow_' + str(window+1)
+        pvals_orderXspeed, pvals_speedXorder, p_main_order, p_main_speed = sample_prep(data[:,window])
+        
+        significance_by_order[windowname] = []
+        significance_by_order[windowname].append(p_main_order)
+        
+        significance_by_speed[windowname] = []
+        significance_by_speed[windowname].append(p_main_speed)
+    
+    significance_combined['main_order'] = significance_by_order
+    significance_combined['main_speed'] = significance_by_speed
+    
+    
+    # save to pickle
+    destination_file = str(save_loc) + '/channel' + str(channel_num) + '_mainEffect.pkl'
+    with open(destination_file, 'wb') as fp:
+        pickle.dump(significance_combined, fp)
+        print('dictionary saved successfully to file')
+        fp.close()
+    
+    return significance_combined
     
    
 
@@ -201,7 +263,7 @@ directory = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/')
 
 channel_order = []
 
-for chan in os.listdir(directory):
+for chan in os.listdir(str(directory) + '/onset_responses/'):
     filepath = str(directory) + '/onset_responses/' + chan
     onset_mat = load_onset_response(filepath)
     channel_num = identify_channel(filepath)       # identify current channel based on filepath
@@ -221,4 +283,7 @@ for chan in os.listdir(directory):
     '''
     
     # ttest considering interaction effect
-    with_interaction_effect(modified_matrix, channel_num, directory)
+    interaction_significance = with_interaction_effect(modified_matrix, channel_num, directory)
+    
+    # ttest considering interaction effect
+    maineff_significance = without_interaction_effect(modified_matrix, channel_num, directory)
