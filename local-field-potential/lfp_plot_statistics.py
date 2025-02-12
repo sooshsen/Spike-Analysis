@@ -62,6 +62,29 @@ def combine_p_channels(df, p_list, index):
     return df
     
 
+def percent_significance(df):
+    
+    percent_sig = []
+    
+    for tw in df.columns:
+        subset = df[tw]
+        significant_rows_num = Counter(subset < 0.05)[True]
+        total_rows_num = len(subset)
+        
+        percent_sig_for_tw = (significant_rows_num/total_rows_num)*100
+        
+        #print(percent_sig_for_tw)
+        
+        # combine % significance of all time windows in a list
+        percent_sig = np.append(percent_sig, percent_sig_for_tw)
+    
+    
+    return percent_sig
+        
+        
+    
+    
+    
 
 
 import numpy as np
@@ -69,20 +92,23 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import pickle
+from collections import Counter
 from pathlib import Path
 
 directory =  Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/significance_tests/ttest/')
 
 
+timewindows = ['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12']
+
 # left
-p_oXs_o1_df = pd.DataFrame(columns=['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12'])
-p_oXs_o2_df = pd.DataFrame(columns=['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12'])
-p_oXs_o3_df = pd.DataFrame(columns=['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12'])
+p_oXs_o1_df = pd.DataFrame(columns=timewindows)
+p_oXs_o2_df = pd.DataFrame(columns=timewindows)
+p_oXs_o3_df = pd.DataFrame(columns=timewindows)
 
 # right
-p_sXo_s1_df = pd.DataFrame(columns=['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12'])
-p_sXo_s2_df = pd.DataFrame(columns=['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12'])
-p_sXo_s3_df = pd.DataFrame(columns=['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12'])
+p_sXo_s1_df = pd.DataFrame(columns=timewindows)
+p_sXo_s2_df = pd.DataFrame(columns=timewindows)
+p_sXo_s3_df = pd.DataFrame(columns=timewindows)
 
 
 
@@ -135,6 +161,24 @@ p_sXo_s1_df = p_sXo_s1_df.sort_values(by=['probeinfo']).astype(float)
 p_sXo_s2_df = p_sXo_s2_df.sort_values(by=['probeinfo']).astype(float)
 p_sXo_s3_df = p_sXo_s3_df.sort_values(by=['probeinfo']).astype(float)
 
+# drop the probe location column
+p_oXs_o1_df.drop(['probeinfo'], axis=1, inplace=True)
+p_oXs_o2_df.drop(['probeinfo'], axis=1, inplace=True)
+p_oXs_o3_df.drop(['probeinfo'], axis=1, inplace=True)
+p_sXo_s1_df.drop(['probeinfo'], axis=1, inplace=True)
+p_sXo_s2_df.drop(['probeinfo'], axis=1, inplace=True)
+p_sXo_s3_df.drop(['probeinfo'], axis=1, inplace=True)
+
+
+# for significance percent calculation
+sigpercent_p_oXs_o1 = percent_significance(p_oXs_o1_df)
+sigpercent_p_oXs_o2 = percent_significance(p_oXs_o2_df)
+sigpercent_p_oXs_o3 = percent_significance(p_oXs_o3_df)
+sigpercent_p_sXo_s1 = percent_significance(p_sXo_s1_df)
+sigpercent_p_sXo_s2 = percent_significance(p_sXo_s2_df)
+sigpercent_p_sXo_s3 = percent_significance(p_sXo_s3_df)
+
+
 # change the index for ease during plotting
 p_oXs_o1_df.set_index(np.unique(probe_locs), inplace=True)
 p_oXs_o2_df.set_index(np.unique(probe_locs), inplace=True)
@@ -144,14 +188,11 @@ p_sXo_s2_df.set_index(np.unique(probe_locs), inplace=True)
 p_sXo_s3_df.set_index(np.unique(probe_locs), inplace=True)
 
 
-# drop the probe location column
-p_oXs_o1_df.drop(['probeinfo'], axis=1, inplace=True)
-p_oXs_o2_df.drop(['probeinfo'], axis=1, inplace=True)
-p_oXs_o3_df.drop(['probeinfo'], axis=1, inplace=True)
-p_sXo_s1_df.drop(['probeinfo'], axis=1, inplace=True)
-p_sXo_s2_df.drop(['probeinfo'], axis=1, inplace=True)
-p_sXo_s3_df.drop(['probeinfo'], axis=1, inplace=True)
 
+
+
+
+    
 
 
 
@@ -186,10 +227,30 @@ for axisnum in range(6):
     axs[0, axisnum].invert_yaxis()
     axs[0, axisnum].axvline(x = 6, color = 'w', linestyle = '--', linewidth = 1)
     #axs[0, axisnum].set_xticks([0,300,600],['-300','0','300'])
-    axs[0, axisnum].set_xlabel('Time (in ms)')
+    
     
     
 
 
 
 ### SIGNIFICANCE PERCENTAGE
+
+axs[1,0].plot(sigpercent_p_oXs_o1, 'o-')
+axs[1, 0].set_ylabel('% significance in each time window')
+
+axs[1,1].plot(sigpercent_p_oXs_o2, 'o-')
+
+axs[1,2].plot(sigpercent_p_oXs_o3, 'o-')
+
+axs[1,3].plot(sigpercent_p_sXo_s1, 'o-')
+
+axs[1,4].plot(sigpercent_p_sXo_s2, 'o-')
+
+axs[1,5].plot(sigpercent_p_sXo_s3, 'o-')
+
+for axisnum in range(6):
+    axs[1, axisnum].set_ylim(0, 100)
+    axs[1, axisnum].set_xlabel('Time windows')
+
+
+fig.suptitle('Pairwise Significance', fontsize=16)
