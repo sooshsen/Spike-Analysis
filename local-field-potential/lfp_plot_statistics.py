@@ -17,49 +17,28 @@ def load_probe():
     return prb_ylocs
 
 
-def for_each_order(model):
-    # orderXspeed
-    orderXspeed = model['orderXspeed']
-
-    p_oXs_o1 = []       # o1 = original
-    p_oXs_o2 = []       # o2 = global reversed
-    p_oXs_o3 = []       # o3 = local reversed
-
-    for tw in orderXspeed.keys():
-        # print(key)
-        window = orderXspeed[tw][0]
-        
-        p_oXs_o1 = np.append(p_oXs_o1, min(window['original'][0]))
-        p_oXs_o2 = np.append(p_oXs_o2, min(window['global_reversed'][0]))
-        p_oXs_o3 = np.append(p_oXs_o3, min(window['local_reversed'][0]))
-        
-    return p_oXs_o1, p_oXs_o2, p_oXs_o3
-
-
-
-def for_each_speed(model):
-    # speedXorder
-    speedXorder = model['speedXorder']
-
-    p_sXo_s1 = []       # s1 = 66Hz
-    p_sXo_s2 = []       # s2 = 75Hz
-    p_sXo_s3 = []       # s3 = 85Hz
-
-    for tw in speedXorder.keys():
-        # print(key)
-        window = speedXorder[tw][0]
-        
-        p_sXo_s1 = np.append(p_sXo_s1, min(window['66'][0]))
-        p_sXo_s2 = np.append(p_sXo_s2, min(window['75'][0]))
-        p_sXo_s3 = np.append(p_sXo_s3, min(window['85'][0]))
-        
-    return p_sXo_s1, p_sXo_s2, p_sXo_s3
-
-
 def combine_p_channels(df, p_list, index):
     
     df.loc[index,:] = p_list
     return df
+
+
+def add_depth_info(df, depths):
+    
+    # add probe info to rest of the data
+    df['probeinfo'] = np.array(depths)
+    
+    # sort the data based on depth of channels
+    df = df.sort_values(by=['probeinfo']).astype(float)
+    
+    # drop the probe location column
+    df.drop(['probeinfo'], axis=1, inplace=True)
+    
+    # change the index for ease during plotting
+    df.set_index(np.unique(depths), inplace=True)
+    
+    return df
+    
     
 
 def percent_significance(df):
@@ -80,11 +59,68 @@ def percent_significance(df):
     
     
     return percent_sig
+
+
+'''
+### FOR HEATMAP plots : Only picking up the minimum p-value without caring about which pairwise comparison it belongs to
+'''
+def minp_each_factor(model):
+    
+    p_factor1 = []       # o1 = original;           s1 = 66Hz
+    p_factor2 = []       # o2 = global reversed;    s2 = 75Hz
+    p_factor3 = []       # o3 = local reversed;     s3 = 85Hz
+
+    for tw in model.keys():
+        # print(key)
+        window = model[tw][0]
         
+        p_factor1 = np.append(p_factor1, min(window[list(window)[0]][0]))
+        p_factor2 = np.append(p_factor2, min(window[list(window)[1]][0]))
+        p_factor3 = np.append(p_factor3, min(window[list(window)[2]][0]))
         
+    return p_factor1, p_factor2, p_factor3
+
+
+'''
+### FOR %SIGNIFICANCE plots : obtain a df for each pairwise comparison pvalue   
+'''
+def everyp_each_factor(model):
     
     
+    p_factor1_12 = []       # o1 = original; pair s1-s2
+    p_factor1_13 = []       # pair s1-s3
+    p_factor1_23 = []       # pair s2-s3
     
+    p_factor2_12 = []       # o2 = global reversed
+    p_factor2_13 = []       
+    p_factor2_23 = []       
+    
+    p_factor3_12 = []       # o3 = local reversed
+    p_factor3_13 = []       
+    p_factor3_23 = []       
+    
+    for tw in model.keys():
+        #print(tw)
+        window = model[tw][0]
+        
+        # factor1
+        p_factor1_12 =  np.append(p_factor1_12, window[list(window)[0]][0][0])
+        p_factor1_13 =  np.append(p_factor1_13, window[list(window)[0]][0][1])
+        p_factor1_23 =  np.append(p_factor1_23, window[list(window)[0]][0][2])
+        
+        # factor 2
+        p_factor2_12 =  np.append(p_factor2_12, window[list(window)[1]][0][0])
+        p_factor2_13 =  np.append(p_factor2_13, window[list(window)[1]][0][1])
+        p_factor2_23 =  np.append(p_factor2_23, window[list(window)[1]][0][2])
+        
+        # factor 3
+        p_factor3_12 =  np.append(p_factor3_12, window[list(window)[2]][0][0])
+        p_factor3_13 =  np.append(p_factor3_13, window[list(window)[2]][0][1])
+        p_factor3_23 =  np.append(p_factor3_23, window[list(window)[2]][0][2])
+        
+    # return the 6 lists (each list of length 12)
+    return p_factor1_12, p_factor1_13, p_factor1_23, p_factor2_12, p_factor2_13, p_factor2_23, p_factor3_12, p_factor3_13, p_factor3_23
+
 
 
 import numpy as np
@@ -100,19 +136,45 @@ directory =  Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/significance_tests/tt
 
 timewindows = ['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12']
 
-# left
-p_oXs_o1_df = pd.DataFrame(columns=timewindows)
-p_oXs_o2_df = pd.DataFrame(columns=timewindows)
-p_oXs_o3_df = pd.DataFrame(columns=timewindows)
+# orderXspeed
+p_o1_df = pd.DataFrame(columns=timewindows)
+p_o2_df = pd.DataFrame(columns=timewindows)
+p_o3_df = pd.DataFrame(columns=timewindows)
 
-# right
-p_sXo_s1_df = pd.DataFrame(columns=timewindows)
-p_sXo_s2_df = pd.DataFrame(columns=timewindows)
-p_sXo_s3_df = pd.DataFrame(columns=timewindows)
+# order1
+p_o1_12_df = pd.DataFrame(columns=timewindows)
+p_o1_13_df = pd.DataFrame(columns=timewindows)
+p_o1_23_df = pd.DataFrame(columns=timewindows)
+# order2
+p_o2_12_df = pd.DataFrame(columns=timewindows)
+p_o2_13_df = pd.DataFrame(columns=timewindows)
+p_o2_23_df = pd.DataFrame(columns=timewindows)
+# order3
+p_o3_12_df = pd.DataFrame(columns=timewindows)
+p_o3_13_df = pd.DataFrame(columns=timewindows)
+p_o3_23_df = pd.DataFrame(columns=timewindows)
+
+# speedXorder
+p_s1_df = pd.DataFrame(columns=timewindows)
+p_s2_df = pd.DataFrame(columns=timewindows)
+p_s3_df = pd.DataFrame(columns=timewindows)
+
+# speed1
+p_s1_12_df = pd.DataFrame(columns=timewindows)
+p_s1_13_df = pd.DataFrame(columns=timewindows)
+p_s1_23_df = pd.DataFrame(columns=timewindows)
+# speed2
+p_s2_12_df = pd.DataFrame(columns=timewindows)
+p_s2_13_df = pd.DataFrame(columns=timewindows)
+p_s2_23_df = pd.DataFrame(columns=timewindows)
+# speed3
+p_s3_12_df = pd.DataFrame(columns=timewindows)
+p_s3_13_df = pd.DataFrame(columns=timewindows)
+p_s3_23_df = pd.DataFrame(columns=timewindows)
 
 
 
-# get channels based on depth
+
 # get probe info
 probe_locs = load_probe()
 
@@ -127,72 +189,99 @@ for chan in range(1,385):
     
     channel_num = chan
     
-    # obtain the p values for this channel
-    p_oXs_o1, p_oXs_o2, p_oXs_o3 = for_each_order(loaded_model)
-    p_sXo_s1, p_sXo_s2, p_sXo_s3 = for_each_speed(loaded_model)
-
-    # left
-    combine_p_channels(p_oXs_o1_df, p_oXs_o1, channel_num)
-    combine_p_channels(p_oXs_o2_df, p_oXs_o2, channel_num)
-    combine_p_channels(p_oXs_o3_df, p_oXs_o3, channel_num)
-
-    # right
-    combine_p_channels(p_sXo_s1_df, p_sXo_s1, channel_num)
-    combine_p_channels(p_sXo_s2_df, p_sXo_s2, channel_num)
-    combine_p_channels(p_sXo_s3_df, p_sXo_s3, channel_num)
-
-
-
-
-
-# add probe info to rest of the data
-p_oXs_o1_df['probeinfo'] = np.array(probe_locs)
-p_oXs_o2_df['probeinfo'] = np.array(probe_locs)
-p_oXs_o3_df['probeinfo'] = np.array(probe_locs)
-p_sXo_s1_df['probeinfo'] = np.array(probe_locs)
-p_sXo_s2_df['probeinfo'] = np.array(probe_locs)
-p_sXo_s3_df['probeinfo'] = np.array(probe_locs)
-
-# sort the data based on depth of channels
-p_oXs_o1_df = p_oXs_o1_df.sort_values(by=['probeinfo']).astype(float)
-p_oXs_o2_df = p_oXs_o2_df.sort_values(by=['probeinfo']).astype(float)
-p_oXs_o3_df = p_oXs_o3_df.sort_values(by=['probeinfo']).astype(float)
-p_sXo_s1_df = p_sXo_s1_df.sort_values(by=['probeinfo']).astype(float)
-p_sXo_s2_df = p_sXo_s2_df.sort_values(by=['probeinfo']).astype(float)
-p_sXo_s3_df = p_sXo_s3_df.sort_values(by=['probeinfo']).astype(float)
-
-# drop the probe location column
-p_oXs_o1_df.drop(['probeinfo'], axis=1, inplace=True)
-p_oXs_o2_df.drop(['probeinfo'], axis=1, inplace=True)
-p_oXs_o3_df.drop(['probeinfo'], axis=1, inplace=True)
-p_sXo_s1_df.drop(['probeinfo'], axis=1, inplace=True)
-p_sXo_s2_df.drop(['probeinfo'], axis=1, inplace=True)
-p_sXo_s3_df.drop(['probeinfo'], axis=1, inplace=True)
-
-
-# for significance percent calculation
-sigpercent_p_oXs_o1 = percent_significance(p_oXs_o1_df)
-sigpercent_p_oXs_o2 = percent_significance(p_oXs_o2_df)
-sigpercent_p_oXs_o3 = percent_significance(p_oXs_o3_df)
-sigpercent_p_sXo_s1 = percent_significance(p_sXo_s1_df)
-sigpercent_p_sXo_s2 = percent_significance(p_sXo_s2_df)
-sigpercent_p_sXo_s3 = percent_significance(p_sXo_s3_df)
-
-
-# change the index for ease during plotting
-p_oXs_o1_df.set_index(np.unique(probe_locs), inplace=True)
-p_oXs_o2_df.set_index(np.unique(probe_locs), inplace=True)
-p_oXs_o3_df.set_index(np.unique(probe_locs), inplace=True)
-p_sXo_s1_df.set_index(np.unique(probe_locs), inplace=True)
-p_sXo_s2_df.set_index(np.unique(probe_locs), inplace=True)
-p_sXo_s3_df.set_index(np.unique(probe_locs), inplace=True)
-
-
-
-
-
-
     
+    ### HEATMAP with minimum pvalue
+    # obtain the minimum p-value for each factor for this channel
+    p_o1, p_o2, p_o3 = minp_each_factor(loaded_model['orderXspeed'])
+    p_s1, p_s2, p_s3 = minp_each_factor(loaded_model['speedXorder'])
+
+    # orderXspeed
+    combine_p_channels(p_o1_df, p_o1, channel_num)
+    combine_p_channels(p_o2_df, p_o2, channel_num)
+    combine_p_channels(p_o3_df, p_o3, channel_num)
+
+    # speedXorder
+    combine_p_channels(p_s1_df, p_s1, channel_num)
+    combine_p_channels(p_s2_df, p_s2, channel_num)
+    combine_p_channels(p_s3_df, p_s3, channel_num)
+    
+    
+    ### % SIGNIFICANCE with all pvalues
+    p_o1_12, p_o1_13, p_o1_23, p_o2_12, p_o2_13, p_o2_23, p_o3_12, p_o3_13, p_o3_23 = everyp_each_factor(loaded_model['orderXspeed'])
+    p_s1_12, p_s1_13, p_s1_23, p_s2_12, p_s2_13, p_s2_23, p_s3_12, p_s3_13, p_s3_23 = everyp_each_factor(loaded_model['speedXorder'])
+    
+    # orderXspeed
+    # order1
+    combine_p_channels(p_o1_12_df, p_o1_12, channel_num)
+    combine_p_channels(p_o1_13_df, p_o1_13, channel_num)
+    combine_p_channels(p_o1_23_df, p_o1_23, channel_num)
+    
+    # order2
+    combine_p_channels(p_o2_12_df, p_o2_12, channel_num)
+    combine_p_channels(p_o2_13_df, p_o2_13, channel_num)
+    combine_p_channels(p_o2_23_df, p_o2_23, channel_num)
+    
+    # order3
+    combine_p_channels(p_o3_12_df, p_o3_12, channel_num)
+    combine_p_channels(p_o3_13_df, p_o3_13, channel_num)
+    combine_p_channels(p_o3_23_df, p_o3_23, channel_num)
+    
+    
+    # speedXorder
+    # speed1
+    combine_p_channels(p_s1_12_df, p_s1_12, channel_num)
+    combine_p_channels(p_s1_13_df, p_s1_13, channel_num)
+    combine_p_channels(p_s1_23_df, p_s1_23, channel_num)
+    
+    # speed2
+    combine_p_channels(p_s2_12_df, p_s2_12, channel_num)
+    combine_p_channels(p_s2_13_df, p_s2_13, channel_num)
+    combine_p_channels(p_s2_23_df, p_s2_23, channel_num)
+    
+    # speed3
+    combine_p_channels(p_s3_12_df, p_s3_12, channel_num)
+    combine_p_channels(p_s3_13_df, p_s3_13, channel_num)
+    combine_p_channels(p_s3_23_df, p_s3_23, channel_num)
+    
+
+
+# for significance % calculation
+# orderXspeed
+sigpercent_p_o1_12 = percent_significance(p_o1_12_df)
+sigpercent_p_o1_13 = percent_significance(p_o1_13_df)
+sigpercent_p_o1_23 = percent_significance(p_o1_23_df)
+
+sigpercent_p_o2_12 = percent_significance(p_o2_12_df)
+sigpercent_p_o2_13 = percent_significance(p_o2_13_df)
+sigpercent_p_o2_23 = percent_significance(p_o2_23_df)
+
+sigpercent_p_o3_12 = percent_significance(p_o3_12_df)
+sigpercent_p_o3_13 = percent_significance(p_o3_13_df)
+sigpercent_p_o3_23 = percent_significance(p_o3_23_df)
+
+
+# speedXorder
+sigpercent_p_s1_12 = percent_significance(p_s1_12_df)
+sigpercent_p_s1_13 = percent_significance(p_s1_13_df)
+sigpercent_p_s1_23 = percent_significance(p_s1_23_df)
+
+sigpercent_p_s2_12 = percent_significance(p_s2_12_df)
+sigpercent_p_s2_13 = percent_significance(p_s2_13_df)
+sigpercent_p_s2_23 = percent_significance(p_s2_23_df)
+
+sigpercent_p_s3_12 = percent_significance(p_s3_12_df)
+sigpercent_p_s3_13 = percent_significance(p_s3_13_df)
+sigpercent_p_s3_23 = percent_significance(p_s3_23_df)
+
+
+# updating the channel order based on electrode depths
+p_o1_df = add_depth_info(p_o1_df, probe_locs)
+p_o2_df = add_depth_info(p_o2_df, probe_locs)
+p_o3_df = add_depth_info(p_o3_df, probe_locs)
+
+p_s1_df = add_depth_info(p_s1_df, probe_locs)
+p_s2_df = add_depth_info(p_s2_df, probe_locs)
+p_s3_df = add_depth_info(p_s3_df, probe_locs)
 
 
 
@@ -203,23 +292,23 @@ fig, axs = plt.subplots(nrows=2, ncols=6, sharex=True, figsize=(20, 10))
 
 
 ### HEATMAP
-sns.heatmap(p_oXs_o1_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,0], cbar=False)
+sns.heatmap(p_o1_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,0], cbar=False)
 axs[0, 0].set_title('Original - pairwiseSpeeds')
 axs[0, 0].set_ylabel('Depth')
 
-sns.heatmap(p_oXs_o2_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,1], cbar=False, yticklabels=False)
+sns.heatmap(p_o2_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,1], cbar=False, yticklabels=False)
 axs[0, 1].set_title('Global rev - pairwiseSpeeds')
 
-sns.heatmap(p_oXs_o3_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,2], cbar=False, yticklabels=False)
+sns.heatmap(p_o3_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,2], cbar=False, yticklabels=False)
 axs[0, 2].set_title('Local rev - pairwiseSpeeds')
 
-sns.heatmap(p_sXo_s1_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,3], cbar=False, yticklabels=False)
+sns.heatmap(p_s1_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,3], cbar=False, yticklabels=False)
 axs[0, 3].set_title('66 - pairwiseOrders')
 
-sns.heatmap(p_sXo_s2_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,4], cbar=False, yticklabels=False)
+sns.heatmap(p_s2_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,4], cbar=False, yticklabels=False)
 axs[0, 4].set_title('75 - pairwiseOrders')
 
-sns.heatmap(p_sXo_s3_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,5], yticklabels=False)
+sns.heatmap(p_s3_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,5], yticklabels=False)
 axs[0, 5].set_title('85 - pairwiseOrders')
 
 
@@ -235,21 +324,42 @@ for axisnum in range(6):
 
 ### SIGNIFICANCE PERCENTAGE
 
-axs[1,0].plot(sigpercent_p_oXs_o1, 'o-')
-axs[1, 0].set_ylabel('% significance in each time window')
+# orderXspeed
+axs[1,0].plot(sigpercent_p_o1_12, 'o-')
+axs[1,0].plot(sigpercent_p_o1_13, 'o-')
+axs[1,0].plot(sigpercent_p_o1_23, 'o-')
+axs[1,0].set_ylabel('% significance in each time window')
 
-axs[1,1].plot(sigpercent_p_oXs_o2, 'o-')
+axs[1,1].plot(sigpercent_p_o2_12, 'o-')
+axs[1,1].plot(sigpercent_p_o2_13, 'o-')
+axs[1,1].plot(sigpercent_p_o2_23, 'o-')
 
-axs[1,2].plot(sigpercent_p_oXs_o3, 'o-')
+axs[1,2].plot(sigpercent_p_o3_12, 'o-')
+axs[1,2].plot(sigpercent_p_o3_13, 'o-')
+axs[1,2].plot(sigpercent_p_o3_23, 'o-')
 
-axs[1,3].plot(sigpercent_p_sXo_s1, 'o-')
+for axisnum in range(3):
+    axs[1, axisnum].legend(['66Hz-75Hz', '66Hz-85Hz', '75Hz-85Hz'])
 
-axs[1,4].plot(sigpercent_p_sXo_s2, 'o-')
+# speedXorder
+axs[1,3].plot(sigpercent_p_s1_12, 'o-')
+axs[1,3].plot(sigpercent_p_s1_13, 'o-')
+axs[1,3].plot(sigpercent_p_s1_23, 'o-')
 
-axs[1,5].plot(sigpercent_p_sXo_s3, 'o-')
+axs[1,4].plot(sigpercent_p_s2_12, 'o-')
+axs[1,4].plot(sigpercent_p_s2_13, 'o-')
+axs[1,4].plot(sigpercent_p_s2_23, 'o-')
+
+axs[1,5].plot(sigpercent_p_s3_12, 'o-')
+axs[1,5].plot(sigpercent_p_s3_13, 'o-')
+axs[1,5].plot(sigpercent_p_s3_23, 'o-')
+
+for axisnum in range(3,6):
+    axs[1, axisnum].legend(['original-globalrev', 'original-localrev', 'localrev-globalrev'])
 
 for axisnum in range(6):
     axs[1, axisnum].set_ylim(0, 100)
+    axs[1, axisnum].axvline(x = 6, color = 'r', linestyle = '--', linewidth = 1)
     axs[1, axisnum].set_xlabel('Time windows')
 
 
