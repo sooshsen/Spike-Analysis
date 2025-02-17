@@ -4,16 +4,17 @@ Created on Wed Feb 12 13:11:45 2025
 
 @author: ssenapat
 
-read pickle files with pvalues to generate heatmap
+Read pickle files with pvalues (results from lfp_ttest.py) to generate heatmap
+Also, percentage of significance measured (directionality of effect not considered)
+{For directionality effect in pairwise comparison, 
+ check scripts lfp_pairwise_direction_effect.py and lfp_plot_pairwise_direction_effect.py}
 """
 
 def load_probe():
     
     file = Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/probe-info.csv')
     prb = pd.read_csv(file)
-    
     prb_ylocs = prb['y']    # column representing the depths of channels
-    
     return prb_ylocs
 
 
@@ -27,16 +28,12 @@ def add_depth_info(df, depths):
     
     # add probe info to rest of the data
     df['probeinfo'] = np.array(depths)
-    
     # sort the data based on depth of channels
     df = df.sort_values(by=['probeinfo']).astype(float)
-    
     # drop the probe location column
     df.drop(['probeinfo'], axis=1, inplace=True)
-    
     # change the index for ease during plotting
     df.set_index(np.unique(depths), inplace=True)
-    
     return df
     
     
@@ -51,13 +48,11 @@ def percent_significance(df):
         total_rows_num = len(subset)
         
         percent_sig_for_tw = (significant_rows_num/total_rows_num)*100
-        
         #print(percent_sig_for_tw)
         
         # combine % significance of all time windows in a list
         percent_sig = np.append(percent_sig, percent_sig_for_tw)
-    
-    
+
     return percent_sig
 
 
@@ -85,7 +80,6 @@ def minp_each_factor(model):
 ### FOR %SIGNIFICANCE plots : obtain a df for each pairwise comparison pvalue   
 '''
 def everyp_each_factor(model):
-    
     
     p_factor1_12 = []       # o1 = original; pair s1-s2
     p_factor1_13 = []       # pair s1-s3
@@ -133,7 +127,6 @@ from pathlib import Path
 
 directory =  Path('G:/Final_exps_spikes/LFP/Elfie/p1/p1_15/significance_tests/ttest/')
 
-
 timewindows = ['tw1', 'tw2', 'tw3', 'tw4','tw5','tw6','tw7','tw8','tw9','tw10','tw11','tw12']
 
 # orderXspeed
@@ -173,12 +166,8 @@ p_s3_13_df = pd.DataFrame(columns=timewindows)
 p_s3_23_df = pd.DataFrame(columns=timewindows)
 
 
-
-
 # get probe info
 probe_locs = load_probe()
-
-
 
 for chan in range(1,385):
 
@@ -188,7 +177,7 @@ for chan in range(1,385):
         file.close()
     
     channel_num = chan
-    
+
     
     ### HEATMAP with minimum pvalue
     # obtain the minimum p-value for each factor for this channel
@@ -204,7 +193,7 @@ for chan in range(1,385):
     combine_p_channels(p_s1_df, p_s1, channel_num)
     combine_p_channels(p_s2_df, p_s2, channel_num)
     combine_p_channels(p_s3_df, p_s3, channel_num)
-    
+
     
     ### % SIGNIFICANCE with all pvalues
     p_o1_12, p_o1_13, p_o1_23, p_o2_12, p_o2_13, p_o2_23, p_o3_12, p_o3_13, p_o3_23 = everyp_each_factor(loaded_model['orderXspeed'])
@@ -226,7 +215,6 @@ for chan in range(1,385):
     combine_p_channels(p_o3_13_df, p_o3_13, channel_num)
     combine_p_channels(p_o3_23_df, p_o3_23, channel_num)
     
-    
     # speedXorder
     # speed1
     combine_p_channels(p_s1_12_df, p_s1_12, channel_num)
@@ -243,7 +231,6 @@ for chan in range(1,385):
     combine_p_channels(p_s3_13_df, p_s3_13, channel_num)
     combine_p_channels(p_s3_23_df, p_s3_23, channel_num)
     
-
 
 # for significance % calculation
 # orderXspeed
@@ -284,12 +271,10 @@ p_s2_df = add_depth_info(p_s2_df, probe_locs)
 p_s3_df = add_depth_info(p_s3_df, probe_locs)
 
 
-
 # plotting
 %matplotlib qt
 
 fig, axs = plt.subplots(nrows=2, ncols=6, sharex=True, figsize=(20, 10))
-
 
 ### HEATMAP
 sns.heatmap(p_o1_df, cmap="coolwarm", vmax=0.034, vmin=0.0005, ax=axs[0,0], cbar=False)
@@ -316,10 +301,6 @@ for axisnum in range(6):
     axs[0, axisnum].invert_yaxis()
     axs[0, axisnum].axvline(x = 6, color = 'w', linestyle = '--', linewidth = 1)
     #axs[0, axisnum].set_xticks([0,300,600],['-300','0','300'])
-    
-    
-    
-
 
 
 ### SIGNIFICANCE PERCENTAGE
