@@ -4,7 +4,7 @@ Created on Fri Dec 13 12:55:04 2024
 
 @author: ssenapat
 
-PLOTTING ONLY FOR MUSIC
+PLOTTING ONLY FOR MUSIC  - heatmap and waveforms
 """
 
 def load_trigger():
