@@ -3,6 +3,8 @@
 Created on Tue Feb 18 14:42:40 2025
 
 @author: ssenapat
+
+For plotting significant pval percentage - without considering interaction effect
 """
 
 def get_alpha():
