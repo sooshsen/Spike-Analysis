@@ -3,6 +3,10 @@
 Created on Mon Feb 17 17:36:40 2025
 
 @author: ssenapat
+
+Read pickle files with mainEffect pvalues (results from lfp_ttest.py) to generate heatmap
+{For directionality effect in significant pairwise comparison, 
+ check scripts lfp_pairwise_direction_maineffect.py and lfp_plot_pairwise_direction_maineffect.py}
 """
 
 def load_probe():
